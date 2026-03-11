@@ -35,7 +35,7 @@ Then run `/setup` for base NanoClaw setup, followed by `/setup-galileo` to confi
 
 | Role | Model | Purpose |
 |------|-------|---------|
-| General agent | Qwen 3.5 27B (6-bit MLX) | Main agent tasks, consolidation, synthesis |
+| General agent | Qwen 3.5 27B | Main agent tasks, consolidation, synthesis |
 | Entity extraction | Qwen 3.5 9B | Lightweight structured extraction for knowledge graph |
 | Embeddings | nomic-embed-text v1.5 (0.3 GB) | Vector search in Neo4j — always loaded |
 | Fallback | Claude Sonnet / Opus | Complex reasoning when local quality isn't enough |
