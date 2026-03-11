@@ -1,5 +1,5 @@
 # Galileo
-
+<!-- token-count --><!-- /token-count -->
 A personal AI assistant with knowledge graph memory, local model routing, and Obsidian integration. Built on [NanoClaw](https://github.com/qwibitai/nanoclaw) — agents run securely in their own containers via the Claude Agent SDK.
 
 ## What Galileo Adds
