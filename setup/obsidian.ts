@@ -10,7 +10,7 @@ import { emitStatus } from './status.js';
 
 const GALILEO_KEYS = ['GALILEO_OBSIDIAN_VAULT_PATH'];
 
-const GALILEO_DIRS = ['Galileo/Digest', 'Galileo/Entities', 'Galileo/Weekly'];
+const GALILEO_DIRS = ['Galileo/Digest', 'Galileo/Entities', 'Galileo/Insights'];
 
 export async function run(_args: string[]): Promise<void> {
   const envConfig = readEnvFile([...GALILEO_KEYS]);

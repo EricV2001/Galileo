@@ -59,14 +59,14 @@ npm run build        # Compile TypeScript
 Service management:
 ```bash
 # macOS (launchd)
-launchctl load ~/Library/LaunchAgents/com.nanoclaw.plist
-launchctl unload ~/Library/LaunchAgents/com.nanoclaw.plist
-launchctl kickstart -k gui/$(id -u)/com.nanoclaw  # restart
+launchctl load ~/Library/LaunchAgents/com.galileo.plist
+launchctl unload ~/Library/LaunchAgents/com.galileo.plist
+launchctl kickstart -k gui/$(id -u)/com.galileo  # restart
 
 # Linux (systemd)
-systemctl --user start nanoclaw
-systemctl --user stop nanoclaw
-systemctl --user restart nanoclaw
+systemctl --user start galileo
+systemctl --user stop galileo
+systemctl --user restart galileo
 ```
 
 ## Troubleshooting

@@ -1,3 +1,5 @@
+import crypto from 'node:crypto';
+
 /**
  * Neo4j client for the Graphiti knowledge graph.
  *
