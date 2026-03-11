@@ -1,10 +1,10 @@
-# NanoClaw
+# Galileo
 
-Personal Claude assistant. See [README.md](README.md) for philosophy and setup. See [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) for architecture decisions.
+Personal AI assistant. NanoClaw fork with knowledge graph memory (Neo4j), local model routing (LM Studio), and Obsidian integration. See [README.md](README.md) for setup. See [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) for architecture decisions.
 
 ## Quick Context
 
-Single Node.js process with skill-based channel system. Channels (WhatsApp, Telegram, Slack, Discord, Gmail) are skills that self-register at startup. Messages route to Claude Agent SDK running in containers (Linux VMs). Each group has isolated filesystem and memory.
+Single Node.js process with skill-based channel system. Channels self-register at startup. Messages route to Claude Agent SDK in containers. Before container spawn, relevant memories are recalled from Neo4j (hybrid search). After response, conversations are stored as episodes with entity extraction. The credential proxy can route API calls to local models (LM Studio) or Anthropic based on `GALILEO_ROUTING_MODE`.
 
 ## Key Files
 
@@ -20,6 +20,12 @@ Single Node.js process with skill-based channel system. Channels (WhatsApp, Tele
 | `src/db.ts` | SQLite operations |
 | `groups/{name}/CLAUDE.md` | Per-group memory (isolated) |
 | `container/skills/agent-browser.md` | Browser automation tool (available to all agents via Bash) |
+| `src/galileo/config.ts` | GALILEO_* env var configuration |
+| `src/galileo/memory-layer.ts` | Public API: recallMemory + storeMemory |
+| `src/galileo/graphiti-client.ts` | Neo4j client: episode CRUD, hybrid search |
+| `src/galileo/embeddings.ts` | nomic-embed-text via LM Studio |
+| `src/galileo/entity-extractor.ts` | Qwen 9B entity/relationship extraction |
+| `src/galileo/decay.ts` | Temporal decay scoring |
 
 ## Skills
 
@@ -28,6 +34,7 @@ Single Node.js process with skill-based channel system. Channels (WhatsApp, Tele
 | `/setup` | First-time installation, authentication, service configuration |
 | `/customize` | Adding channels, integrations, changing behavior |
 | `/debug` | Container issues, logs, troubleshooting |
+| `/setup-galileo` | Configure Neo4j, LM Studio, and Obsidian for Galileo extensions |
 | `/update-nanoclaw` | Bring upstream NanoClaw updates into a customized install |
 | `/qodo-pr-resolver` | Fetch and fix Qodo PR review issues interactively or in batch |
 | `/get-qodo-rules` | Load org- and repo-level coding rules from Qodo before code tasks |

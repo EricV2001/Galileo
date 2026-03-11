@@ -180,17 +180,56 @@ A personal Claude assistant accessible via WhatsApp, with minimal custom code.
 
 ---
 
-## Personal Configuration (Reference)
+## Galileo Extensions
 
-These are the creator's settings, stored here for reference:
+Galileo is a fork of NanoClaw that adds knowledge graph memory, local model routing, and Obsidian integration. All extension code lives in `src/galileo/` to keep upstream merges clean.
 
-- **Trigger**: `@Andy` (case insensitive)
-- **Response prefix**: `Andy:`
-- **Persona**: Default Claude (no custom personality)
-- **Main channel**: Self-chat (messaging yourself in WhatsApp)
+### Knowledge Graph Memory (Neo4j)
 
----
+- **Storage:** Conversations stored as Episode nodes in Neo4j with vector embeddings (nomic-embed-text v1.5, 768 dimensions)
+- **Entity extraction:** Qwen 3.5 9B extracts entities (people, projects, concepts, tools) and creates Entity nodes with RELATES_TO edges
+- **Hybrid search:** Three channels merged and re-ranked by temporal decay:
+  1. Vector similarity (cosine, HNSW index)
+  2. Full-text BM25 (Lucene index)
+  3. Graph traversal (entity -> RELATES_TO -> episode)
+- **Temporal decay:** `score = (1/(1+rank)) * exp(-ln(2) * age_days / half_life_days)`
+- **Integration:** Two hooks in `src/index.ts` -- recall before prompt, store after response. Gated behind `GALILEO_MEMORY_ENABLED`.
 
-## Project Name
+### Local Model Routing
 
-**NanoClaw** - A reference to Clawdbot (now OpenClaw).
+- **Credential proxy translation:** Extends `src/credential-proxy.ts` to translate Anthropic <-> OpenAI API formats
+- **Container always spawns:** Local models get full agent capabilities (tools, MCP, bash, browser)
+- **Routing toggle:** `GALILEO_ROUTING_MODE` -- `LOCAL_FIRST` / `LOCAL_ONLY` / `CLAUDE_ONLY`
+- **Model tiers:** Qwen 3.5 27B (general), Qwen 3.5 9B (extraction), nomic-embed-text (embeddings)
+
+### Obsidian Integration
+
+- **Daily consolidation** (3am) -- Qwen 27B extracts insights from 24h episodes, writes digest
+- **Entity sync** -- Wikilinked Markdown to `<vault>/Galileo/Entities/`
+- **Weekly synthesis** (4am Sunday) -- Pattern detection across the week
+
+### Galileo File Structure
+
+```
+src/galileo/
+  config.ts            -- GALILEO_* env var configuration
+  memory-layer.ts      -- Public API: recallMemory() + storeMemory()
+  graphiti-client.ts   -- Neo4j client: episode CRUD, hybrid search
+  embeddings.ts        -- nomic-embed-text via LM Studio /v1/embeddings
+  entity-extractor.ts  -- Qwen 9B structured entity extraction
+  decay.ts             -- Temporal decay scoring
+  api-translator.ts    -- Anthropic <-> OpenAI format translation (Phase 2)
+  lmstudio-client.ts   -- LM Studio probe, model loading (Phase 2)
+  router.ts            -- Routing toggle logic (Phase 2)
+  obsidian-writer.ts   -- Markdown note writer (Phase 3)
+  consolidation.ts     -- Nightly/weekly consolidation (Phase 3)
+```
+
+### Modifications to NanoClaw Core
+
+| File | Change | Lines |
+|------|--------|-------|
+| `src/index.ts` | Memory hooks (recall + store) + init/shutdown | ~22 |
+| `src/credential-proxy.ts` | Routing + format translation (Phase 2) | ~50 |
+| `setup/index.ts` | Register 3 Galileo setup steps (Phase 0) | ~3 |
+| `package.json` | +neo4j-driver dependency | 1 |
