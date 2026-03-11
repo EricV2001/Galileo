@@ -3,11 +3,15 @@ name: setup-galileo
 description: Configure Neo4j, LM Studio, and Obsidian for Galileo extensions. Run after /setup to enable knowledge graph memory, local model routing, and Obsidian integration.
 ---
 
-# Galileo Setup
+# Galileo Extensions Setup
 
 Configure Galileo's three extensions: knowledge graph memory (Neo4j), local model routing (LM Studio), and Obsidian integration.
 
-**Run after `/setup` has completed.**
+**Run after `/setup` has completed** (or invoked automatically from step 9 of `/setup`).
+
+**Principle:** Same as `/setup` — fix what you can, only pause for genuine user actions.
+
+**UX Note:** Use `AskUserQuestion` for all user-facing questions. If `.env.example` exists, reference it so users can see all available variables.
 
 ## 1. Check .env Configuration
 
@@ -56,11 +60,60 @@ Run: `npx tsx setup/index.ts --step obsidian`
 Parse the status block. If skipped (no vault path), note this is optional.
 If failed, help debug the path.
 
-## 5. Summary
+## 5. Install Consolidation Services (macOS only)
 
-Report status of all three components:
+If GALILEO_OBSIDIAN_VAULT_PATH is set AND the platform is macOS, offer to install the launchd services for automated consolidation.
+
+AskUserQuestion: "Would you like to install the scheduled consolidation services? These run automatically via launchd:
+- **Daily consolidation** (3:00 AM) — summarizes the day's conversations
+- **Weekly synthesis** (Sundays 4:00 AM) — cross-conversation insights
+- **Entity sync** (3:15 AM daily) — exports entities to your Obsidian vault"
+
+If yes:
+
+First, read the plist files and replace placeholders with actual values:
+
+```bash
+PROJECT_ROOT=$(pwd)
+NODE_PATH=$(which node)
+HOME_DIR=$HOME
+
+for plist in deploy/galileo-consolidate.plist deploy/galileo-synthesize.plist deploy/galileo-entity-sync.plist; do
+  BASENAME=$(basename "$plist")
+  LABEL=$(echo "$BASENAME" | sed 's/\.plist//')
+  DEST="$HOME/Library/LaunchAgents/com.${LABEL}.plist"
+  sed -e "s|{{PROJECT_ROOT}}|${PROJECT_ROOT}|g" \
+      -e "s|{{NODE_PATH}}|${NODE_PATH}|g" \
+      -e "s|{{HOME}}|${HOME_DIR}|g" \
+      "$plist" > "$DEST"
+  launchctl load "$DEST"
+done
+```
+
+Create the log directory:
+```bash
+mkdir -p ~/Library/Logs/Galileo
+```
+
+Verify all three are loaded:
+```bash
+launchctl list | grep galileo
+```
+
+If not macOS: Tell user consolidation can be run manually via `npx tsx scripts/galileo-consolidation.ts daily|weekly|entities`, or set up equivalent cron jobs.
+
+## 6. Summary
+
+Report status of all components:
 - Neo4j: connected / failed
 - LM Studio: connected (N models) / failed / skipped
 - Obsidian: configured / skipped
+- Consolidation services: installed / skipped
 
-If Neo4j is connected, announce: "Knowledge graph memory is ready. Set GALILEO_MEMORY_ENABLED=true in .env to activate."
+If Neo4j is connected and GALILEO_MEMORY_ENABLED is not already `true`:
+- Set it: append `GALILEO_MEMORY_ENABLED=true` to `.env`
+- Announce: "Knowledge graph memory is now active."
+
+If all components are configured: "Galileo is fully configured. Restart the main service to pick up the new settings:"
+- macOS: `launchctl kickstart -k gui/$(id -u)/com.galileo`
+- Linux: `systemctl --user restart galileo`
