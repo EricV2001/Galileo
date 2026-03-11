@@ -85,7 +85,7 @@ A personal AI assistant with knowledge graph memory, local model routing, and Ob
 External Services:
   ┌─────────────┐   ┌─────────────────┐   ┌───────────────────┐
   │ Neo4j       │   │ LM Studio       │   │ Obsidian Vault    │
-  │ (knowledge  │   │ (local models   │   │ (Markdown notes   │
+  │ (knowledge  │   │ (Mac Studio     │   │ (Markdown notes   │
   │  graph)     │   │  via LMLink)    │   │  via launchd)     │
   └─────────────┘   └─────────────────┘   └───────────────────┘
 ```
@@ -685,8 +685,9 @@ Container agent → POST /v1/messages → Credential proxy
 
 ### Hardware Setup
 
+- **Mac Studio** — Runs LM Studio with local models
 - **Mac Mini** — Runs Galileo (Node.js process + containers)
-- **Mac Studio** — Serves models via LMLink to Mac Mini over the network
+- [LMLink](https://lmstudio.ai/docs/lmlink) bridges the two machines — models appear as `localhost:1234` on the Mac Mini
 - **Model tiers:**
   - Qwen 3.5 27B (6-bit MLX) — general agent tasks, consolidation
   - Qwen 3.5 9B — entity extraction
@@ -1174,7 +1175,7 @@ All agents run inside containers (lightweight Linux VMs), providing:
 ### Local Model Security
 
 When using `LOCAL_FIRST` or `LOCAL_ONLY` routing:
-- API calls stay on the local network (Mac Mini ↔ Mac Studio)
+- API calls stay on the local network (Mac Mini ↔ Mac Studio via LMLink)
 - No conversation data sent to external APIs (in `LOCAL_ONLY` mode)
 - The credential proxy never forwards real API keys to LM Studio
 - Fallback to Anthropic (in `LOCAL_FIRST` mode) uses standard credential injection

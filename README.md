@@ -28,8 +28,10 @@ Then run `/setup` for base NanoClaw setup, followed by `/setup-galileo` to confi
 
 | Component | Purpose |
 |-----------|---------|
-| Mac Mini | Runs Galileo (NanoClaw host process + containers) |
-| Mac Studio | Serves models via [LMLink](https://lmstudio.ai) to Mac Mini |
+| Mac Studio | Runs LM Studio with local models |
+| Mac Mini | Runs Galileo (host process + containers) |
+
+[LMLink](https://lmstudio.ai/docs/lmlink) connects the two machines — models on the Mac Studio appear as `localhost:1234` on the Mac Mini. No network URL configuration needed.
 
 ### Model Tiers
 
@@ -65,8 +67,8 @@ Galileo-specific settings in `.env`:
 # Routing (controls credential proxy behavior)
 GALILEO_ROUTING_MODE=LOCAL_FIRST          # LOCAL_FIRST | LOCAL_ONLY | CLAUDE_ONLY
 
-# LM Studio (via LMLink)
-GALILEO_LMSTUDIO_URL=http://<mac-studio-ip>:1234/v1
+# LM Studio (via LMLink — appears as localhost)
+GALILEO_LMSTUDIO_URL=http://localhost:1234/v1
 GALILEO_MODEL_GENERAL=qwen3.5-27b
 GALILEO_MODEL_EXTRACTION=qwen3.5-9b
 GALILEO_MODEL_EMBEDDING=nomic-embed-text-v1.5
@@ -114,7 +116,7 @@ For full architecture details, see [docs/SPEC.md](docs/SPEC.md).
 
 ## Requirements
 
-- macOS (Mac Mini or Mac Studio recommended)
+- macOS (Mac Mini + Mac Studio with LMLink recommended)
 - Node.js 20+
 - [Claude Code](https://claude.ai/download)
 - [Apple Container](https://github.com/apple/container) or [Docker](https://docker.com/products/docker-desktop)

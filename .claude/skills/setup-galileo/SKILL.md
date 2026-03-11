@@ -22,7 +22,7 @@ Read `.env` and check for GALILEO_* variables. If missing, ask the user for:
    - Ask: "What are your Neo4j credentials? (default: neo4j/neo4j on localhost:7687)"
 
 2. **LM Studio URL** — `GALILEO_LMSTUDIO_URL`
-   - Ask: "What is your LM Studio URL? (e.g., http://192.168.1.100:1234/v1)"
+   - Ask: "What is your LM Studio URL? (default: http://localhost:1234/v1 — LMLink makes remote models appear local)"
 
 3. **Model names** — `GALILEO_MODEL_GENERAL`, `GALILEO_MODEL_EXTRACTION`, `GALILEO_MODEL_EMBEDDING`
    - Suggest defaults: qwen3.5-27b, qwen3.5-9b, nomic-embed-text-v1.5
