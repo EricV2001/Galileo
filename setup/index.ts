@@ -16,6 +16,9 @@ const STEPS: Record<
   mounts: () => import('./mounts.js'),
   service: () => import('./service.js'),
   verify: () => import('./verify.js'),
+  neo4j: () => import('./neo4j.js'),
+  'lm-studio': () => import('./lm-studio.js'),
+  obsidian: () => import('./obsidian.js'),
 };
 
 async function main(): Promise<void> {
