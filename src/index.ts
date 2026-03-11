@@ -55,6 +55,7 @@ import {
 import { startSchedulerLoop } from './task-scheduler.js';
 import { Channel, NewMessage, RegisteredGroup } from './types.js';
 import { logger } from './logger.js';
+import { isGalileoMemoryEnabled, initGalileoMemory, closeGalileoMemory, recallMemory, storeMemory } from './galileo/memory-layer.js';
 
 // Re-export for backwards compatibility during refactor
 export { escapeXml, formatMessages } from './router.js';
@@ -177,6 +178,13 @@ async function processGroupMessages(chatJid: string): Promise<boolean> {
 
   const prompt = formatMessages(missedMessages, TIMEZONE);
 
+  // Galileo: enrich prompt with relevant memory
+  let enrichedPrompt = prompt;
+  if (isGalileoMemoryEnabled()) {
+    const memory = await recallMemory(prompt).catch(() => '');
+    if (memory) enrichedPrompt = `${memory}\n\n---\n\n${prompt}`;
+  }
+
   // Advance cursor so the piping path in startMessageLoop won't re-fetch
   // these messages. Save the old cursor so we can roll back on error.
   const previousCursor = lastAgentTimestamp[chatJid] || '';
@@ -207,7 +215,7 @@ async function processGroupMessages(chatJid: string): Promise<boolean> {
   let hadError = false;
   let outputSentToUser = false;
 
-  const output = await runAgent(group, prompt, chatJid, async (result) => {
+  const output = await runAgent(group, enrichedPrompt, chatJid, async (result) => {
     // Streaming output callback — called for each agent result
     if (result.result) {
       const raw =
@@ -220,6 +228,12 @@ async function processGroupMessages(chatJid: string): Promise<boolean> {
       if (text) {
         await channel.sendMessage(chatJid, text);
         outputSentToUser = true;
+        // Galileo: store conversation in knowledge graph
+        if (isGalileoMemoryEnabled()) {
+          storeMemory(enrichedPrompt, text, group.folder).catch((err) =>
+            logger.warn({ err }, 'Galileo memory store failed'),
+          );
+        }
       }
       // Only reset idle timer on actual results, not session-update markers (result: null)
       resetIdleTimer();
@@ -471,6 +485,12 @@ async function main(): Promise<void> {
   logger.info('Database initialized');
   loadState();
 
+  // Galileo: initialize knowledge graph memory if enabled
+  if (isGalileoMemoryEnabled()) {
+    await initGalileoMemory();
+    logger.info('Galileo memory initialized');
+  }
+
   // Start credential proxy (containers route API calls through this)
   const proxyServer = await startCredentialProxy(
     CREDENTIAL_PROXY_PORT,
@@ -481,6 +501,7 @@ async function main(): Promise<void> {
   const shutdown = async (signal: string) => {
     logger.info({ signal }, 'Shutdown signal received');
     proxyServer.close();
+    if (isGalileoMemoryEnabled()) await closeGalileoMemory();
     await queue.shutdown(10000);
     for (const ch of channels) await ch.disconnect();
     process.exit(0);
