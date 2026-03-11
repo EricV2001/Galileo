@@ -26,6 +26,13 @@ Single Node.js process with skill-based channel system. Channels self-register a
 | `src/galileo/embeddings.ts` | nomic-embed-text via LM Studio |
 | `src/galileo/entity-extractor.ts` | Qwen 9B entity/relationship extraction |
 | `src/galileo/decay.ts` | Temporal decay scoring |
+| `src/galileo/api-translator.ts` | Anthropic <-> OpenAI API format translation |
+| `src/galileo/lmstudio-client.ts` | LM Studio health checks + model listing |
+| `src/galileo/router.ts` | Routing toggle (LOCAL_FIRST/LOCAL_ONLY/CLAUDE_ONLY) |
+| `src/galileo/obsidian-writer.ts` | Markdown + YAML frontmatter note writer |
+| `src/galileo/consolidation.ts` | Nightly consolidation, weekly synthesis, entity sync |
+| `scripts/galileo-consolidation.ts` | CLI entry point for consolidation tasks |
+| `deploy/galileo-*.plist` | launchd plists for scheduled consolidation |
 
 ## Skills
 
