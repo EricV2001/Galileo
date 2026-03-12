@@ -185,13 +185,17 @@ export function startCredentialProxy(
       'Local route: sending to LM Studio',
     );
 
+    // 30s timeout — prevents hanging when LM Studio crashes mid-generation
+    const fetchOpts: RequestInit = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(openaiBody),
+      signal: AbortSignal.timeout(30_000),
+    };
+
     if (anthropicBody.stream) {
       // Streaming: forward and translate SSE chunks
-      const response = await fetch(targetUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(openaiBody),
-      });
+      const response = await fetch(targetUrl, fetchOpts);
 
       if (!response.ok || !response.body) {
         throw new Error(`LM Studio returned ${response.status}`);
@@ -238,11 +242,7 @@ export function startCredentialProxy(
       res.end();
     } else {
       // Non-streaming: translate request, forward, translate response
-      const response = await fetch(targetUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(openaiBody),
-      });
+      const response = await fetch(targetUrl, fetchOpts);
 
       if (!response.ok) {
         throw new Error(`LM Studio returned ${response.status}`);
@@ -297,14 +297,16 @@ export function startCredentialProxy(
 
           handleLocalRoute(body, req, res).catch((err) => {
             logger.warn({ err }, 'Local route failed');
+            if (res.headersSent) {
+              // Streaming already started — can't fall back, just close
+              res.end();
+              return;
+            }
             if (shouldFallbackToClaude()) {
-              // Fall through to existing Anthropic forwarding
               forwardToAnthropic(body, req, res);
             } else {
-              if (!res.headersSent) {
-                res.writeHead(502);
-                res.end(JSON.stringify({ error: 'Local model unavailable' }));
-              }
+              res.writeHead(502);
+              res.end(JSON.stringify({ error: 'Local model unavailable' }));
             }
           });
           return; // Don't fall through to Anthropic forwarding
