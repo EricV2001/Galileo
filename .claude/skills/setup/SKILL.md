@@ -156,19 +156,19 @@ If the build fails, read the error output and fix it (usually a missing dependen
 
 ## 6. Name Your Assistant
 
-AskUserQuestion: "What would you like to name your assistant? (default: Andy)"
+AskUserQuestion: "What would you like to name your assistant? (default: Galileo)"
 
-If the user provides a name different from "Andy":
+If the user provides a name different from "Galileo":
 
 1. Write `ASSISTANT_NAME="<name>"` to `.env` (update if already present, append if not)
-2. Update `groups/global/CLAUDE.md`: replace `# Andy` → `# <name>` and `You are Andy` → `You are <name>`
+2. Update `groups/global/CLAUDE.md`: replace `# Galileo` → `# <name>` and `You are Galileo` → `You are <name>`
 3. Update any group-specific CLAUDE.md files the same way
 4. When registering groups (step 5 channel skills), the `--assistant-name` flag should have been passed. If it wasn't, update the trigger pattern in the database:
 ```bash
 sqlite3 store/messages.db "UPDATE registered_groups SET trigger_pattern = '@<name>';"
 ```
 
-If the user accepts the default "Andy", skip this step.
+If the user accepts the default "Galileo", skip this step.
 
 ## 7. Mount Allowlist
 
