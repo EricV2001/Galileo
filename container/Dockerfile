@@ -30,6 +30,17 @@ RUN apt-get update && apt-get install -y \
 ENV AGENT_BROWSER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium
 
+# Install Python + pip for crawl4ai
+RUN apt-get update && apt-get install -y python3 python3-pip python3-venv && rm -rf /var/lib/apt/lists/*
+
+# Install crawl4ai (web scraper that outputs LLM-friendly markdown)
+# Uses the already-installed Chromium for rendering
+RUN pip3 install --break-system-packages crawl4ai && \
+    crawl4ai-setup --skip-browsers
+
+# Point crawl4ai at the system Chromium
+ENV CRAWL4AI_BROWSER_PATH=/usr/bin/chromium
+
 # Install agent-browser and claude-code globally
 RUN npm install -g agent-browser @anthropic-ai/claude-code
 
