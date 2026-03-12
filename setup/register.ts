@@ -22,6 +22,7 @@ interface RegisterArgs {
   requiresTrigger: boolean;
   isMain: boolean;
   assistantName: string;
+  routingMode?: 'LOCAL_FIRST' | 'LOCAL_ONLY' | 'CLAUDE_ONLY';
 }
 
 function parseArgs(args: string[]): RegisterArgs {
@@ -62,6 +63,13 @@ function parseArgs(args: string[]): RegisterArgs {
       case '--assistant-name':
         result.assistantName = args[++i] || 'Andy';
         break;
+      case '--routing-mode': {
+        const mode = args[++i] || '';
+        if (['LOCAL_FIRST', 'LOCAL_ONLY', 'CLAUDE_ONLY'].includes(mode)) {
+          result.routingMode = mode as RegisterArgs['routingMode'];
+        }
+        break;
+      }
     }
   }
 
@@ -107,6 +115,7 @@ export async function run(args: string[]): Promise<void> {
     added_at: new Date().toISOString(),
     requiresTrigger: parsed.requiresTrigger,
     isMain: parsed.isMain,
+    routingMode: parsed.routingMode,
   });
 
   logger.info('Wrote registration to SQLite');

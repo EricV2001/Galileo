@@ -53,14 +53,34 @@ Parse the status block. If failed:
 
 Report which models are available.
 
-## 4. Setup Obsidian
+## 4. Configure Routing Mode
+
+If LM Studio verified successfully in step 3, ask the user which routing mode to use:
+
+AskUserQuestion: "Which routing mode should be the global default?
+- **CLAUDE_ONLY** (default) — All requests go to Claude. Safest option.
+- **LOCAL_FIRST** — Try local model first, fall back to Claude on failure. Good for cost savings.
+- **LOCAL_ONLY** — Local model only, no Claude fallback. For offline/privacy use."
+
+Write the chosen value to `.env` as `GALILEO_ROUTING_MODE=<value>`.
+
+If LM Studio failed or was skipped, set `GALILEO_ROUTING_MODE=CLAUDE_ONLY` and inform the user.
+
+Note: Individual groups can override this with per-group routing:
+```bash
+npx tsx setup/index.ts --step set-routing --jid "<group-jid>" --mode LOCAL_FIRST
+```
+
+Also set `GALILEO_MAX_LOCAL_ITERATIONS=10` in `.env` if not present (circuit breaker for local model tool-use loops).
+
+## 5. Setup Obsidian
 
 Run: `npx tsx setup/index.ts --step obsidian`
 
 Parse the status block. If skipped (no vault path), note this is optional.
 If failed, help debug the path.
 
-## 5. Install Consolidation Services (macOS only)
+## 6. Install Consolidation Services (macOS only)
 
 If GALILEO_OBSIDIAN_VAULT_PATH is set AND the platform is macOS, offer to install the launchd services for automated consolidation.
 
@@ -102,7 +122,7 @@ launchctl list | grep galileo
 
 If not macOS: Tell user consolidation can be run manually via `npx tsx scripts/galileo-consolidation.ts daily|weekly|entities`, or set up equivalent cron jobs.
 
-## 6. Summary
+## 7. Summary
 
 Report status of all components:
 - Neo4j: connected / failed

@@ -7,7 +7,7 @@ A personal AI assistant with knowledge graph memory, local model routing, and Ob
 Galileo extends NanoClaw with three features ported from [Galileo1](https://github.com/EricV2001/Galileo1) (Python predecessor):
 
 - **Knowledge Graph Memory** (Neo4j) — Hybrid search (vector + full-text + graph traversal) with temporal decay scoring. Conversations are stored as episodes with entity extraction via local LLM.
-- **Local Model Routing** (LM Studio) — Route agent requests to local models (Qwen 3.5 27B) via credential proxy translation. Local models get full agent capabilities: tools, MCP, bash, browser. Toggle: `LOCAL_FIRST` / `LOCAL_ONLY` / `CLAUDE_ONLY`.
+- **Local Model Routing** (LM Studio) — Route agent requests to local models (Qwen 3.5 27B) via credential proxy translation. Local models run in text-only mode (tools stripped to prevent crashes). Per-group routing lets each chat use a different mode: `LOCAL_FIRST` / `LOCAL_ONLY` / `CLAUDE_ONLY`.
 - **Obsidian Integration** — Nightly consolidation, weekly synthesis, and entity sync to your Obsidian vault via launchd. Uses local models for summarization.
 
 All Galileo code lives in `src/galileo/` for clean upstream merges.
@@ -56,7 +56,8 @@ Then run `/setup` for base NanoClaw setup, followed by `/setup-galileo` to confi
 - **Knowledge graph memory** — Neo4j-backed episode storage with hybrid search
 - **Entity extraction** — Automatic extraction of people, projects, concepts via Qwen 9B
 - **Temporal decay** — Recent memories scored higher than old ones (30-day half-life)
-- **Local model routing** — Run Qwen 3.5 27B with full agent capabilities via credential proxy
+- **Local model routing** — Per-group routing to Qwen 3.5 27B (text-only) or Claude (full tools) via credential proxy
+- **Web scraping** — Crawl4ai in containers for LLM-friendly markdown extraction from web pages
 - **Obsidian sync** — Daily digests, entity notes, weekly synthesis to your vault
 
 ## Configuration
@@ -81,8 +82,20 @@ GALILEO_NEO4J_PASSWORD=your-password
 GALILEO_MAX_RECALL_RESULTS=5
 GALILEO_DECAY_HALF_LIFE_DAYS=30
 
+# Iteration limit (local model tool-use circuit breaker)
+GALILEO_MAX_LOCAL_ITERATIONS=10
+
 # Obsidian
 GALILEO_OBSIDIAN_VAULT_PATH=~/Documents/MyVault
+```
+
+### Per-Group Routing
+
+Each chat group can override the global `GALILEO_ROUTING_MODE`. This lets you use the local model for scraping/mundane tasks and Claude for complex work:
+
+```bash
+# Set routing for an existing group
+npx tsx setup/index.ts --step set-routing --jid "tg:-100123@telegram" --mode LOCAL_FIRST
 ```
 
 ## Architecture
@@ -94,7 +107,7 @@ Channels --> SQLite --> Polling loop --> Memory recall (Neo4j)
   --> Response --> Memory store (Neo4j + entity extraction)
 ```
 
-The credential proxy transparently translates between Anthropic and OpenAI API formats. The container never knows which model it's talking to — local models get the full agent experience.
+The credential proxy transparently translates between Anthropic and OpenAI API formats. Local models receive text-only requests (tool interactions are flattened to plain text summaries). Each group's routing mode is encoded in the credential proxy URL path, enabling per-group routing without modifying the Claude Agent SDK.
 
 ### Key Files
 

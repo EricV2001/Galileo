@@ -19,6 +19,7 @@ const STEPS: Record<
   neo4j: () => import('./neo4j.js'),
   'lm-studio': () => import('./lm-studio.js'),
   obsidian: () => import('./obsidian.js'),
+  'set-routing': () => import('./set-routing.js'),
 };
 
 async function main(): Promise<void> {
