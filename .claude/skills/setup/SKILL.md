@@ -154,14 +154,30 @@ npm install && npm run build
 
 If the build fails, read the error output and fix it (usually a missing dependency). Then continue to step 6.
 
-## 6. Mount Allowlist
+## 6. Name Your Assistant
+
+AskUserQuestion: "What would you like to name your assistant? (default: Andy)"
+
+If the user provides a name different from "Andy":
+
+1. Write `ASSISTANT_NAME="<name>"` to `.env` (update if already present, append if not)
+2. Update `groups/global/CLAUDE.md`: replace `# Andy` → `# <name>` and `You are Andy` → `You are <name>`
+3. Update any group-specific CLAUDE.md files the same way
+4. When registering groups (step 5 channel skills), the `--assistant-name` flag should have been passed. If it wasn't, update the trigger pattern in the database:
+```bash
+sqlite3 store/messages.db "UPDATE registered_groups SET trigger_pattern = '@<name>';"
+```
+
+If the user accepts the default "Andy", skip this step.
+
+## 7. Mount Allowlist
 
 AskUserQuestion: Agent access to external directories?
 
 **No:** `npx tsx setup/index.ts --step mounts -- --empty`
 **Yes:** Collect paths/permissions. `npx tsx setup/index.ts --step mounts -- --json '{"allowedRoots":[...],"blockedPatterns":[],"nonMainReadOnly":true}'`
 
-## 7. Start Service
+## 8. Start Service
 
 If service already running: unload first.
 - macOS: `launchctl unload ~/Library/LaunchAgents/com.galileo.plist`
@@ -191,13 +207,13 @@ Replace `USERNAME` with the actual username (from `whoami`). Run the two `sudo` 
 - Linux: check `systemctl --user status galileo`.
 - Re-run the service step after fixing.
 
-## 8. Verify
+## 9. Verify
 
 Run `npx tsx setup/index.ts --step verify` and parse the status block.
 
 **If STATUS=failed, fix each:**
 - SERVICE=stopped → `npm run build`, then restart: `launchctl kickstart -k gui/$(id -u)/com.galileo` (macOS) or `systemctl --user restart galileo` (Linux) or `bash start-galileo.sh` (WSL nohup)
-- SERVICE=not_found → re-run step 7
+- SERVICE=not_found → re-run step 8
 - CREDENTIALS=missing → re-run step 4
 - CHANNEL_AUTH shows `not_found` for any channel → re-invoke that channel's skill (e.g. `/add-telegram`)
 - REGISTERED_GROUPS=0 → re-invoke the channel skills from step 5
@@ -205,7 +221,7 @@ Run `npx tsx setup/index.ts --step verify` and parse the status block.
 
 Tell user to test: send a message in their registered chat. Show: `tail -f logs/galileo.log`
 
-## 9. Galileo Extensions
+## 10. Galileo Extensions
 
 After base setup is verified, automatically proceed to Galileo extension configuration.
 
@@ -220,7 +236,7 @@ If skip: Tell user they can run `/setup-galileo` anytime later to enable these f
 
 ## Troubleshooting
 
-**Service not starting:** Check `logs/galileo.error.log`. Common: wrong Node path (re-run step 7), missing `.env` (step 4), missing channel credentials (re-invoke channel skill).
+**Service not starting:** Check `logs/galileo.error.log`. Common: wrong Node path (re-run step 8), missing `.env` (step 4), missing channel credentials (re-invoke channel skill).
 
 **Container agent fails ("Claude Code process exited with code 1"):** Ensure the container runtime is running — `open -a Docker` (macOS Docker), `container system start` (Apple Container), or `sudo systemctl start docker` (Linux). Check container logs in `groups/main/logs/container-*.log`.
 
