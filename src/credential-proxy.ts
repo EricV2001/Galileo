@@ -175,6 +175,16 @@ export function startCredentialProxy(
     const { body: openaiBody } = translateRequest(anthropicBody);
     const targetUrl = `${GALILEO_LMSTUDIO_URL}/chat/completions`;
 
+    logger.info(
+      {
+        model: openaiBody.model,
+        messageCount: openaiBody.messages?.length,
+        toolCount: openaiBody.tools?.length ?? 0,
+        stream: !!anthropicBody.stream,
+      },
+      'Local route: sending to LM Studio',
+    );
+
     if (anthropicBody.stream) {
       // Streaming: forward and translate SSE chunks
       const response = await fetch(targetUrl, {
