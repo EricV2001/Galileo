@@ -273,7 +273,9 @@ export function startCredentialProxy(
         req.url = strippedUrl;
 
         // Galileo: route /v1/messages to local model if configured
-        if (strippedUrl.startsWith('/v1/messages') && shouldRouteLocal(requestMode)) {
+        // Only match the exact messages endpoint, not sub-paths like /v1/messages/count_tokens
+        const isMessagesEndpoint = strippedUrl === '/v1/messages' || strippedUrl === '/v1/messages/';
+        if (isMessagesEndpoint && shouldRouteLocal(requestMode)) {
           // Check iteration limit before routing to local model
           if (GALILEO_MAX_LOCAL_ITERATIONS > 0) {
             let parsedBody: any;
