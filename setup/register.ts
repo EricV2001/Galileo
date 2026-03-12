@@ -146,6 +146,14 @@ export async function run(args: string[]): Promise<void> {
           /You are Galileo/g,
           `You are ${parsed.assistantName}`,
         );
+        content = content.replace(
+          /"trigger": "@Galileo"/g,
+          `"trigger": "@${parsed.assistantName}"`,
+        );
+        content = content.replace(
+          /@Galileo/g,
+          `@${parsed.assistantName}`,
+        );
         fs.writeFileSync(mdFile, content);
         logger.info({ file: mdFile }, 'Updated CLAUDE.md');
       }
