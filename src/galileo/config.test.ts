@@ -65,6 +65,10 @@ describe('config defaults (no env vars set)', () => {
   it('GALILEO_OBSIDIAN_VAULT_PATH defaults to empty string', () => {
     expect(config.GALILEO_OBSIDIAN_VAULT_PATH).toBe('');
   });
+
+  it('GALILEO_MAX_LOCAL_ITERATIONS defaults to 10', () => {
+    expect(config.GALILEO_MAX_LOCAL_ITERATIONS).toBe(10);
+  });
 });
 
 describe('config with invalid GALILEO_ROUTING_MODE', () => {

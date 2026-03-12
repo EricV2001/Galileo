@@ -19,6 +19,7 @@ const GALILEO_KEYS = [
   'GALILEO_MAX_RECALL_RESULTS',
   'GALILEO_DECAY_HALF_LIFE_DAYS',
   'GALILEO_OBSIDIAN_VAULT_PATH',
+  'GALILEO_MAX_LOCAL_ITERATIONS',
 ] as const;
 
 const envConfig = readEnvFile([...GALILEO_KEYS]);
@@ -65,6 +66,11 @@ export const GALILEO_DECAY_HALF_LIFE_DAYS = parseInt(
 
 export const GALILEO_OBSIDIAN_VAULT_PATH =
   env('GALILEO_OBSIDIAN_VAULT_PATH') || '';
+
+export const GALILEO_MAX_LOCAL_ITERATIONS = parseInt(
+  env('GALILEO_MAX_LOCAL_ITERATIONS') || '10',
+  10,
+);
 
 // -- Helpers --------------------------------------------------------------
 

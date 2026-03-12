@@ -16,7 +16,7 @@ import { request as httpRequest, RequestOptions } from 'http';
 
 import { readEnvFile } from './env.js';
 import { logger } from './logger.js';
-import { GALILEO_LMSTUDIO_URL } from './galileo/config.js';
+import { GALILEO_LMSTUDIO_URL, GALILEO_MAX_LOCAL_ITERATIONS } from './galileo/config.js';
 import {
   translateRequest,
   translateResponse,
@@ -27,6 +27,45 @@ import {
   shouldFallbackToClaude,
   getRoutingMode,
 } from './galileo/router.js';
+
+// -- Iteration limit helpers ------------------------------------------------
+
+/**
+ * Count tool_result blocks in an Anthropic Messages request body.
+ * Each tool_result represents one completed tool-use iteration.
+ * Stateless — the full conversation history is in every request.
+ */
+function countToolResultBlocks(body: any): number {
+  let count = 0;
+  for (const msg of body.messages ?? []) {
+    if (msg.role !== 'user' || typeof msg.content === 'string') continue;
+    for (const block of msg.content ?? []) {
+      if (block.type === 'tool_result') count++;
+    }
+  }
+  return count;
+}
+
+/**
+ * Build a synthetic Anthropic response that stops the tool-use loop.
+ * Used when LOCAL_ONLY hits the iteration limit.
+ */
+function buildIterationLimitResponse(iterationCount: number): any {
+  return {
+    id: `msg_limit_${Date.now()}`,
+    type: 'message',
+    role: 'assistant',
+    content: [
+      {
+        type: 'text',
+        text: `[Galileo] Local model iteration limit reached (${iterationCount}/${GALILEO_MAX_LOCAL_ITERATIONS}). Stopping tool-use loop.`,
+      },
+    ],
+    model: 'galileo-limit',
+    stop_reason: 'end_turn',
+    usage: { input_tokens: 0, output_tokens: 0 },
+  };
+}
 
 export type AuthMode = 'api-key' | 'oauth';
 
@@ -219,6 +258,33 @@ export function startCredentialProxy(
 
         // Galileo: route /v1/messages to local model if configured
         if (req.url?.startsWith('/v1/messages') && shouldRouteLocal()) {
+          // Check iteration limit before routing to local model
+          if (GALILEO_MAX_LOCAL_ITERATIONS > 0) {
+            let parsedBody: any;
+            try {
+              parsedBody = JSON.parse(body.toString());
+            } catch {
+              parsedBody = null;
+            }
+
+            if (parsedBody) {
+              const iterations = countToolResultBlocks(parsedBody);
+              if (iterations >= GALILEO_MAX_LOCAL_ITERATIONS) {
+                logger.warn(
+                  { iterations, limit: GALILEO_MAX_LOCAL_ITERATIONS },
+                  'Local model iteration limit reached',
+                );
+                if (shouldFallbackToClaude()) {
+                  forwardToAnthropic(body, req, res);
+                } else {
+                  res.writeHead(200, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify(buildIterationLimitResponse(iterations)));
+                }
+                return;
+              }
+            }
+          }
+
           handleLocalRoute(body, req, res).catch((err) => {
             logger.warn({ err }, 'Local route failed');
             if (shouldFallbackToClaude()) {
