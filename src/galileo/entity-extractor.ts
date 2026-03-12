@@ -62,7 +62,6 @@ export async function extractAndStoreEntities(
           { role: 'user', content: episodeBody },
         ],
         temperature: 0.1,
-        response_format: { type: 'json_object' },
       }),
     });
 
