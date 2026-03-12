@@ -31,8 +31,9 @@ interface ExtractionResult {
 // ---------------------------------------------------------------------------
 
 const SYSTEM_PROMPT =
-  'Extract entities and relationships from the following conversation. ' +
-  'Return valid JSON only, no markdown fences. Schema: { "entities": ' +
+  '/no_think\n' +
+  'Extract entities from the following conversation. ' +
+  'Return ONLY valid JSON, no markdown fences, no explanation. Schema: { "entities": ' +
   '[{ "name": "string", "type": "person|project|concept|tool|event|location|organization", ' +
   '"summary": "one sentence describing this entity in context" }] }';
 
@@ -62,6 +63,7 @@ export async function extractAndStoreEntities(
           { role: 'user', content: episodeBody },
         ],
         temperature: 0.1,
+        max_tokens: 1024,
       }),
     });
 
