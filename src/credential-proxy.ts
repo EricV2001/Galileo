@@ -26,6 +26,7 @@ import {
   shouldRouteLocal,
   shouldFallbackToClaude,
   getRoutingMode,
+  parseRoutePrefix,
 } from './galileo/router.js';
 
 // -- Iteration limit helpers ------------------------------------------------
@@ -266,8 +267,13 @@ export function startCredentialProxy(
       req.on('end', () => {
         const body = Buffer.concat(chunks);
 
+        // Parse per-group routing prefix from URL (e.g. /route/LOCAL_FIRST/v1/messages)
+        const { mode: requestMode, strippedUrl } = parseRoutePrefix(req.url || '');
+        // Rewrite URL so upstream sees the clean path
+        req.url = strippedUrl;
+
         // Galileo: route /v1/messages to local model if configured
-        if (req.url?.startsWith('/v1/messages') && shouldRouteLocal()) {
+        if (strippedUrl.startsWith('/v1/messages') && shouldRouteLocal(requestMode)) {
           // Check iteration limit before routing to local model
           if (GALILEO_MAX_LOCAL_ITERATIONS > 0) {
             let parsedBody: any;
@@ -284,7 +290,7 @@ export function startCredentialProxy(
                   { iterations, limit: GALILEO_MAX_LOCAL_ITERATIONS },
                   'Local model iteration limit reached',
                 );
-                if (shouldFallbackToClaude()) {
+                if (shouldFallbackToClaude(requestMode)) {
                   forwardToAnthropic(body, req, res);
                 } else {
                   res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -302,7 +308,7 @@ export function startCredentialProxy(
               res.end();
               return;
             }
-            if (shouldFallbackToClaude()) {
+            if (shouldFallbackToClaude(requestMode)) {
               forwardToAnthropic(body, req, res);
             } else {
               res.writeHead(502);

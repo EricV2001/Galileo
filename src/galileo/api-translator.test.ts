@@ -53,7 +53,7 @@ describe('translateRequest', () => {
     ]);
   });
 
-  it('translates tool definitions (input_schema -> parameters)', () => {
+  it('strips tool definitions from requests (local model runs text-only)', () => {
     const result = translateRequest({
       messages: [{ role: 'user', content: 'use the tool' }],
       tools: [
@@ -68,22 +68,10 @@ describe('translateRequest', () => {
       ],
     });
 
-    expect(result.body.tools).toEqual([
-      {
-        type: 'function',
-        function: {
-          name: 'get_weather',
-          description: 'Get weather',
-          parameters: {
-            type: 'object',
-            properties: { city: { type: 'string' } },
-          },
-        },
-      },
-    ]);
+    expect(result.body.tools).toBeUndefined();
   });
 
-  it('translates tool_use blocks in assistant messages to tool_calls', () => {
+  it('flattens tool_use blocks in assistant messages to plain text', () => {
     const result = translateRequest({
       messages: [
         {
@@ -103,20 +91,11 @@ describe('translateRequest', () => {
 
     const msg = result.body.messages[0];
     expect(msg.role).toBe('assistant');
-    expect(msg.content).toBe('Let me check.');
-    expect(msg.tool_calls).toEqual([
-      {
-        id: 'toolu_123',
-        type: 'function',
-        function: {
-          name: 'get_weather',
-          arguments: JSON.stringify({ city: 'Paris' }),
-        },
-      },
-    ]);
+    expect(msg.content).toBe('Let me check.\n[Used tool: get_weather]');
+    expect(msg.tool_calls).toBeUndefined();
   });
 
-  it('translates tool_result blocks into separate tool messages', () => {
+  it('flattens tool_result blocks to plain text summaries', () => {
     const result = translateRequest({
       messages: [
         {
@@ -133,7 +112,7 @@ describe('translateRequest', () => {
     });
 
     expect(result.body.messages).toEqual([
-      { role: 'tool', tool_call_id: 'toolu_123', content: 'Sunny, 22C' },
+      { role: 'user', content: '[Tool result: Sunny, 22C]' },
     ]);
   });
 

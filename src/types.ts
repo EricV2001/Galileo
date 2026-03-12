@@ -40,6 +40,7 @@ export interface RegisteredGroup {
   containerConfig?: ContainerConfig;
   requiresTrigger?: boolean; // Default: true for groups, false for solo chats
   isMain?: boolean; // True for the main control group (no trigger, elevated privileges)
+  routingMode?: 'LOCAL_FIRST' | 'LOCAL_ONLY' | 'CLAUDE_ONLY'; // Per-group routing override
 }
 
 export interface NewMessage {

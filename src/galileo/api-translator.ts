@@ -92,24 +92,17 @@ export function translateRequest(anthropicBody: any): {
     }
   }
 
-  // Translate each Anthropic message.
+  // Translate each Anthropic message, stripping tool interactions.
+  // Local models run without tools — tool_use/tool_result blocks are
+  // converted to plain text so the model has conversational context.
   for (const msg of anthropicBody.messages ?? []) {
-    const converted = translateMessage(msg);
-    messages.push(...converted);
+    const converted = translateMessageTextOnly(msg);
+    if (converted) messages.push(converted);
   }
 
-  // Translate tools.
-  let tools: any[] | undefined;
-  if (anthropicBody.tools?.length) {
-    tools = anthropicBody.tools.map((t: AnthropicTool) => ({
-      type: 'function' as const,
-      function: {
-        name: t.name,
-        description: t.description,
-        parameters: t.input_schema,
-      },
-    }));
-  }
+  // Tools are intentionally NOT passed to the local model.
+  // This prevents crashes, infinite tool-use loops, and saves context.
+  // The local model provides text-only responses; Claude handles tool use.
 
   const body: Record<string, unknown> = {
     model: GALILEO_MODEL_GENERAL,
@@ -117,13 +110,49 @@ export function translateRequest(anthropicBody: any): {
     messages,
     stream: anthropicBody.stream ?? false,
   };
-  if (tools) body.tools = tools;
 
   return {
     url: '/v1/chat/completions',
     body,
     headers: { 'Content-Type': 'application/json' },
   };
+}
+
+/**
+ * Convert one Anthropic message into a single text-only OpenAI message.
+ * Tool interactions are flattened to plain text summaries so the local
+ * model has context without needing tool support.
+ * Returns null if the message has no meaningful text content.
+ */
+function translateMessageTextOnly(msg: AnthropicMessage): OpenAIMessage | null {
+  if (typeof msg.content === 'string') {
+    return { role: msg.role, content: msg.content };
+  }
+
+  const blocks = msg.content as AnthropicContentBlock[];
+  const parts: string[] = [];
+
+  for (const block of blocks) {
+    if (block.type === 'text') {
+      parts.push(block.text);
+    } else if (block.type === 'tool_use') {
+      parts.push(`[Used tool: ${block.name}]`);
+    } else if (block.type === 'tool_result') {
+      const text =
+        typeof block.content === 'string'
+          ? block.content
+          : Array.isArray(block.content)
+            ? (block.content as AnthropicContentBlock[])
+                .filter((b): b is AnthropicTextBlock => b.type === 'text')
+                .map((b) => b.text)
+                .join('\n')
+            : '';
+      if (text) parts.push(`[Tool result: ${text.slice(0, 500)}]`);
+    }
+  }
+
+  if (parts.length === 0) return null;
+  return { role: msg.role, content: parts.join('\n') };
 }
 
 /**
