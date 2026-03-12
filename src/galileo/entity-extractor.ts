@@ -84,11 +84,18 @@ export async function extractAndStoreEntities(
     }
 
     // Step 2: Parse the JSON response
+    // Strip <think>...</think> tags that some models emit before JSON
+    let jsonContent = content;
+    const thinkEnd = jsonContent.indexOf('</think>');
+    if (thinkEnd !== -1) {
+      jsonContent = jsonContent.slice(thinkEnd + '</think>'.length).trim();
+    }
+
     let parsed: ExtractionResult;
     try {
-      parsed = JSON.parse(content) as ExtractionResult;
+      parsed = JSON.parse(jsonContent) as ExtractionResult;
     } catch {
-      logger.warn({ content }, 'Failed to parse entity extraction JSON');
+      logger.warn({ content: jsonContent.slice(0, 200) }, 'Failed to parse entity extraction JSON');
       return;
     }
 
