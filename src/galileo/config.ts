@@ -44,7 +44,7 @@ export const GALILEO_MODEL_GENERAL =
 export const GALILEO_MODEL_EXTRACTION =
   env('GALILEO_MODEL_EXTRACTION') || 'qwen3.5-9b';
 export const GALILEO_MODEL_EMBEDDING =
-  env('GALILEO_MODEL_EMBEDDING') || 'nomic-embed-text-v1.5';
+  env('GALILEO_MODEL_EMBEDDING') || 'text-embedding-nomic-embed-text-v1.5@f16';
 
 export const GALILEO_MEMORY_ENABLED =
   (env('GALILEO_MEMORY_ENABLED') || 'false') === 'true';

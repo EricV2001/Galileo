@@ -35,12 +35,12 @@ Then run `/setup` for base NanoClaw setup, followed by `/setup-galileo` to confi
 
 ### Model Tiers
 
-| Role | Model | Purpose |
-|------|-------|---------|
-| General agent | Qwen 3.5 27B | Main agent tasks, consolidation, synthesis |
-| Entity extraction | Qwen 3.5 9B | Lightweight structured extraction for knowledge graph |
-| Embeddings | nomic-embed-text v1.5 (0.3 GB) | Vector search in Neo4j — always loaded |
-| Fallback | Claude Sonnet / Opus | Complex reasoning when local quality isn't enough |
+| Role | Model | Context | Purpose |
+|------|-------|---------|---------|
+| General agent | Qwen 3.5 27B | 32768 | Main agent tasks, consolidation, synthesis |
+| Entity extraction | Qwen 3.5 9B | 4096 | Lightweight structured extraction for knowledge graph |
+| Embeddings | nomic-embed-text v1.5 @f16 (0.3 GB) | — | Vector search in Neo4j — always loaded |
+| Fallback | Claude Sonnet / Opus | — | Complex reasoning when local quality isn't enough |
 
 ## Features
 
@@ -71,7 +71,7 @@ GALILEO_ROUTING_MODE=LOCAL_FIRST          # LOCAL_FIRST | LOCAL_ONLY | CLAUDE_ON
 GALILEO_LMSTUDIO_URL=http://localhost:1234/v1
 GALILEO_MODEL_GENERAL=qwen3.5-27b
 GALILEO_MODEL_EXTRACTION=qwen3.5-9b
-GALILEO_MODEL_EMBEDDING=nomic-embed-text-v1.5
+GALILEO_MODEL_EMBEDDING=text-embedding-nomic-embed-text-v1.5@f16
 
 # Memory (Neo4j)
 GALILEO_MEMORY_ENABLED=true

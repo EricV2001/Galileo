@@ -100,9 +100,9 @@ External Services:
 | Agent | @anthropic-ai/claude-agent-sdk (0.2.29) | Run Claude with tools and MCP servers |
 | Browser Automation | agent-browser + Chromium | Web interaction and screenshots |
 | Knowledge Graph | Neo4j + neo4j-driver | Episode storage, entity extraction, hybrid search |
-| Embeddings | nomic-embed-text v1.5 via LM Studio | 768-dim vectors for semantic search |
-| Entity Extraction | Qwen 3.5 9B via LM Studio | Extract entities and relationships from conversations |
-| Local Agent Model | Qwen 3.5 27B via LM Studio | Full agent capabilities routed through credential proxy |
+| Embeddings | nomic-embed-text v1.5 @f16 via LM Studio | 768-dim vectors for semantic search |
+| Entity Extraction | Qwen 3.5 9B via LM Studio (4096 context) | Extract entities and relationships from conversations |
+| Local Agent Model | Qwen 3.5 27B via LM Studio (32768 context) | Full agent capabilities routed through credential proxy |
 | API Translation | Credential proxy (`src/credential-proxy.ts`) | Bidirectional Anthropic ↔ OpenAI format conversion |
 | Note Export | Obsidian writer + launchd | Nightly consolidation, weekly synthesis, entity sync |
 | Runtime | Node.js 20+ | Host process for routing and scheduling |
@@ -443,8 +443,8 @@ Galileo-specific configuration is in `src/galileo/config.ts`, loaded from enviro
 | `GALILEO_ROUTING_MODE` | `CLAUDE_ONLY` | Routing mode: `LOCAL_FIRST`, `LOCAL_ONLY`, or `CLAUDE_ONLY` |
 | `GALILEO_LMSTUDIO_URL` | `http://localhost:1234/v1` | LM Studio OpenAI-compatible API endpoint |
 | `GALILEO_MODEL_GENERAL` | `qwen3.5-27b` | Model for agent tasks and consolidation |
-| `GALILEO_MODEL_EXTRACTION` | `qwen3.5-9b` | Model for entity extraction |
-| `GALILEO_MODEL_EMBEDDING` | `nomic-embed-text-v1.5` | Model for vector embeddings (768 dimensions) |
+| `GALILEO_MODEL_EXTRACTION` | `qwen3.5-9b` | Model for entity extraction (4096 context recommended) |
+| `GALILEO_MODEL_EMBEDDING` | `text-embedding-nomic-embed-text-v1.5@f16` | Model for vector embeddings (768 dimensions) |
 | `GALILEO_MEMORY_ENABLED` | `false` | Enable Neo4j knowledge graph memory |
 | `GALILEO_NEO4J_URI` | `bolt://localhost:7687` | Neo4j connection URI |
 | `GALILEO_NEO4J_USER` | `neo4j` | Neo4j username |
@@ -569,7 +569,7 @@ score = (1 / (1 + rank)) × exp(-ln(2) × ageDays / halfLifeDays)
 
 `embed(texts, prefix)` calls LM Studio's OpenAI-compatible `/embeddings` endpoint:
 
-- Model: `nomic-embed-text-v1.5` (0.3 GB, always loaded)
+- Model: `text-embedding-nomic-embed-text-v1.5@f16` (0.3 GB, always loaded)
 - Dimensions: 768
 - Prefix convention: `"search_document: <text>"` for indexing, `"search_query: <text>"` for searching
 - Never throws — returns empty arrays on failure for graceful degradation
@@ -689,9 +689,9 @@ Container agent → POST /v1/messages → Credential proxy
 - **Mac Mini** — Runs Galileo (Node.js process + containers)
 - [LMLink](https://lmstudio.ai/docs/lmlink) bridges the two machines — models appear as `localhost:1234` on the Mac Mini
 - **Model tiers:**
-  - Qwen 3.5 27B (6-bit MLX) — general agent tasks, consolidation
-  - Qwen 3.5 9B — entity extraction
-  - nomic-embed-text v1.5 (0.3 GB) — embeddings (always loaded)
+  - Qwen 3.5 27B (6-bit MLX, 32768 context) — general agent tasks, consolidation
+  - Qwen 3.5 9B (4096 context) — entity extraction
+  - nomic-embed-text v1.5 @f16 (0.3 GB) — embeddings (always loaded)
 
 ### LM Studio Client
 

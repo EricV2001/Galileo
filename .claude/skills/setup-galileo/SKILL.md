@@ -25,7 +25,7 @@ Read `.env` and check for GALILEO_* variables. If missing, ask the user for:
    - Ask: "What is your LM Studio URL? (default: http://localhost:1234/v1 — LMLink makes remote models appear local)"
 
 3. **Model names** — `GALILEO_MODEL_GENERAL`, `GALILEO_MODEL_EXTRACTION`, `GALILEO_MODEL_EMBEDDING`
-   - Suggest defaults: qwen3.5-27b, qwen3.5-9b, nomic-embed-text-v1.5
+   - Suggest defaults: qwen3.5-27b, qwen3.5-9b, text-embedding-nomic-embed-text-v1.5@f16
 
 4. **Obsidian vault path** — `GALILEO_OBSIDIAN_VAULT_PATH`
    - Ask: "Where is your Obsidian vault? (leave empty to skip Obsidian integration)"
