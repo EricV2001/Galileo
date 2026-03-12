@@ -185,12 +185,12 @@ export function startCredentialProxy(
       'Local route: sending to LM Studio',
     );
 
-    // 30s timeout — prevents hanging when LM Studio crashes mid-generation
+    // 5min timeout — prevents hanging when LM Studio crashes mid-generation
     const fetchOpts: RequestInit = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(openaiBody),
-      signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(300_000),
     };
 
     if (anthropicBody.stream) {
