@@ -359,7 +359,10 @@ describe('message windowing', () => {
       { role: 'system', content: 'You are helpful.' },
     ];
     for (let i = 0; i < count; i++) {
-      msgs.push({ role: i % 2 === 0 ? 'user' : 'assistant', content: `msg-${i}` });
+      msgs.push({
+        role: i % 2 === 0 ? 'user' : 'assistant',
+        content: `msg-${i}`,
+      });
     }
     return msgs;
   }
@@ -382,7 +385,10 @@ describe('message windowing', () => {
       const result = trimMessages(msgs as any);
 
       expect(result.length).toBe(6); // system + 5
-      expect(result[0]).toEqual({ role: 'system', content: 'You are helpful.' });
+      expect(result[0]).toEqual({
+        role: 'system',
+        content: 'You are helpful.',
+      });
       // Last 5 conversation messages are msg-5 through msg-9.
       expect(result[1].content).toBe('msg-5');
       expect(result[5].content).toBe('msg-9');

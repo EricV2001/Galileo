@@ -48,7 +48,9 @@ function countToolResultBlocks(body: any): number {
     const msg = messages[i];
     if (msg.role !== 'user') continue;
     if (typeof msg.content === 'string') break;
-    const hasToolResult = (msg.content ?? []).some((b: any) => b.type === 'tool_result');
+    const hasToolResult = (msg.content ?? []).some(
+      (b: any) => b.type === 'tool_result',
+    );
     if (!hasToolResult) break;
     count++;
   }
@@ -272,14 +274,12 @@ export function startCredentialProxy(
       req.on('end', () => {
         const body = Buffer.concat(chunks);
 
-
         // Strip query parameters before URL matching (SDK appends ?beta=true etc.)
         const urlWithoutQuery = (req.url || '').split('?')[0];
 
         // Parse per-group routing prefix from URL (e.g. /route/LOCAL_FIRST/v1/messages)
-        const { mode: requestMode, strippedUrl } = parseRoutePrefix(
-          urlWithoutQuery,
-        );
+        const { mode: requestMode, strippedUrl } =
+          parseRoutePrefix(urlWithoutQuery);
         // Rewrite URL so upstream sees the clean path
         req.url = strippedUrl;
 
@@ -287,7 +287,10 @@ export function startCredentialProxy(
         // to avoid Anthropic API cost and credit-limit errors blocking local groups.
         const isCountTokens = strippedUrl === '/v1/messages/count_tokens';
         if (isCountTokens && shouldRouteLocal(requestMode)) {
-          logger.debug({ mode: requestMode }, 'Local route: mocking count_tokens');
+          logger.debug(
+            { mode: requestMode },
+            'Local route: mocking count_tokens',
+          );
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ input_tokens: 0 }));
           return;
@@ -300,11 +303,19 @@ export function startCredentialProxy(
         const isOAuthExchange =
           strippedUrl === '/api/oauth/claude_cli/create_api_key';
         if (isOAuthExchange && shouldRouteLocal(requestMode)) {
-          logger.debug({ mode: requestMode }, 'Local route: mocking OAuth exchange');
+          logger.debug(
+            { mode: requestMode },
+            'Local route: mocking OAuth exchange',
+          );
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
-            api_key: { secret_key: 'sk-ant-local-offline-00000000000000000000000000000000000000000000000000' },
-          }));
+          res.end(
+            JSON.stringify({
+              api_key: {
+                secret_key:
+                  'sk-ant-local-offline-00000000000000000000000000000000000000000000000000',
+              },
+            }),
+          );
           return;
         }
 

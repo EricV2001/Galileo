@@ -116,7 +116,10 @@ export function translateRequest(anthropicBody: any): {
 
   const body: Record<string, unknown> = {
     model: GALILEO_MODEL_GENERAL,
-    max_tokens: Math.min(anthropicBody.max_tokens ?? 4096, GALILEO_LOCAL_MAX_TOKENS),
+    max_tokens: Math.min(
+      anthropicBody.max_tokens ?? 4096,
+      GALILEO_LOCAL_MAX_TOKENS,
+    ),
     messages: trimmedMessages,
     stream: anthropicBody.stream ?? false,
   };
