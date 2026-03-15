@@ -31,7 +31,6 @@ interface ExtractionResult {
 // ---------------------------------------------------------------------------
 
 const SYSTEM_PROMPT =
-  '/no_think\n' +
   'Extract entities from the following conversation. ' +
   'Return ONLY valid JSON, no markdown fences, no explanation. Schema: { "entities": ' +
   '[{ "name": "string", "type": "person|project|concept|tool|event|location|organization", ' +
@@ -60,7 +59,7 @@ export async function extractAndStoreEntities(
         model: GALILEO_MODEL_EXTRACTION,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: episodeBody },
+          { role: 'user', content: `/no_think\n${episodeBody}` },
         ],
         temperature: 0.1,
         max_tokens: 1024,
