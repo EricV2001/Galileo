@@ -9,7 +9,8 @@
  */
 
 import crypto from 'node:crypto';
-import { GALILEO_MODEL_GENERAL } from './config.js';
+import { logger } from '../logger.js';
+import { GALILEO_MODEL_GENERAL, GALILEO_MAX_LOCAL_CONTEXT_MESSAGES } from './config.js';
 
 // -- Types ----------------------------------------------------------------
 
@@ -104,10 +105,13 @@ export function translateRequest(anthropicBody: any): {
   // This prevents crashes, infinite tool-use loops, and saves context.
   // The local model provides text-only responses; Claude handles tool use.
 
+  // Trim older messages to keep context within the configured window.
+  const trimmedMessages = trimMessages(messages);
+
   const body: Record<string, unknown> = {
     model: GALILEO_MODEL_GENERAL,
     max_tokens: anthropicBody.max_tokens,
-    messages,
+    messages: trimmedMessages,
     stream: anthropicBody.stream ?? false,
   };
 
@@ -116,6 +120,33 @@ export function translateRequest(anthropicBody: any): {
     body,
     headers: { 'Content-Type': 'application/json' },
   };
+}
+
+/**
+ * Trim the translated messages array to the configured context window.
+ * Keeps the system message (index 0) and the last N non-system messages,
+ * where N is GALILEO_MAX_LOCAL_CONTEXT_MESSAGES. If the limit is 0 or
+ * negative, trimming is disabled and all messages pass through.
+ */
+export function trimMessages(messages: OpenAIMessage[]): OpenAIMessage[] {
+  if (GALILEO_MAX_LOCAL_CONTEXT_MESSAGES <= 0) return messages;
+
+  // Separate system message (always first) from conversation messages.
+  const hasSystem = messages.length > 0 && messages[0].role === 'system';
+  const systemMsg = hasSystem ? messages[0] : null;
+  const conversationMsgs = hasSystem ? messages.slice(1) : messages;
+
+  if (conversationMsgs.length <= GALILEO_MAX_LOCAL_CONTEXT_MESSAGES) {
+    return messages;
+  }
+
+  const trimmed = conversationMsgs.slice(-GALILEO_MAX_LOCAL_CONTEXT_MESSAGES);
+  const dropped = conversationMsgs.length - GALILEO_MAX_LOCAL_CONTEXT_MESSAGES;
+  logger.info(
+    `[galileo] Context window: trimmed ${dropped} older messages, keeping ${trimmed.length} of ${conversationMsgs.length}`,
+  );
+
+  return systemMsg ? [systemMsg, ...trimmed] : trimmed;
 }
 
 /**
