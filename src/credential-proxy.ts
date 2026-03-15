@@ -274,6 +274,31 @@ export function startCredentialProxy(
         // Rewrite URL so upstream sees the clean path
         req.url = strippedUrl;
 
+        // Intercept count_tokens for local routing — return synthetic response
+        // to avoid Anthropic API cost and credit-limit errors blocking local groups.
+        const isCountTokens = strippedUrl === '/v1/messages/count_tokens';
+        if (isCountTokens && shouldRouteLocal(requestMode)) {
+          logger.debug({ mode: requestMode }, 'Local route: mocking count_tokens');
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ input_tokens: 0 }));
+          return;
+        }
+
+        // Intercept OAuth token exchange for local routing — return a synthetic API key.
+        // The proxy injects real credentials on actual Anthropic calls anyway,
+        // so the SDK's key value doesn't matter. This prevents Anthropic calls
+        // at container startup for LOCAL_ONLY and LOCAL_FIRST groups.
+        const isOAuthExchange =
+          strippedUrl === '/api/oauth/claude_cli/create_api_key';
+        if (isOAuthExchange && shouldRouteLocal(requestMode)) {
+          logger.debug({ mode: requestMode }, 'Local route: mocking OAuth exchange');
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            api_key: { secret_key: 'sk-ant-local-offline-00000000000000000000000000000000000000000000000000' },
+          }));
+          return;
+        }
+
         // Galileo: route /v1/messages to local model if configured
         // Only match the exact messages endpoint, not sub-paths like /v1/messages/count_tokens
         const isMessagesEndpoint = strippedUrl === '/v1/messages' || strippedUrl === '/v1/messages/';

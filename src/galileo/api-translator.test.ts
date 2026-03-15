@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('./config.js', () => ({
   GALILEO_MODEL_GENERAL: 'test-model',
+  GALILEO_MAX_LOCAL_CONTEXT_MESSAGES: 40,
 }));
 
 vi.mock('../logger.js', () => ({
@@ -12,6 +13,7 @@ import {
   translateRequest,
   translateResponse,
   createStreamTranslator,
+  trimMessages,
 } from './api-translator.js';
 
 // ---------------------------------------------------------------------------
@@ -343,5 +345,96 @@ describe('createStreamTranslator', () => {
       })}`,
     );
     expect(third.some((e) => e.includes('message_stop'))).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// message windowing (trimMessages)
+// ---------------------------------------------------------------------------
+
+describe('message windowing', () => {
+  /** Helper to create N user/assistant message pairs. */
+  function makeMessages(count: number) {
+    const msgs: Array<{ role: string; content: string }> = [
+      { role: 'system', content: 'You are helpful.' },
+    ];
+    for (let i = 0; i < count; i++) {
+      msgs.push({ role: i % 2 === 0 ? 'user' : 'assistant', content: `msg-${i}` });
+    }
+    return msgs;
+  }
+
+  it('does not trim messages under the limit', () => {
+    const msgs = makeMessages(10); // system + 10 = 11 total
+    const result = trimMessages(msgs as any);
+    expect(result).toEqual(msgs);
+    expect(result.length).toBe(11);
+  });
+
+  it('keeps system message + last N messages when over limit', async () => {
+    // Override the config mock for this test.
+    const config = await import('./config.js');
+    const original = config.GALILEO_MAX_LOCAL_CONTEXT_MESSAGES;
+    (config as any).GALILEO_MAX_LOCAL_CONTEXT_MESSAGES = 5;
+
+    try {
+      const msgs = makeMessages(10); // system + 10 conversation messages
+      const result = trimMessages(msgs as any);
+
+      expect(result.length).toBe(6); // system + 5
+      expect(result[0]).toEqual({ role: 'system', content: 'You are helpful.' });
+      // Last 5 conversation messages are msg-5 through msg-9.
+      expect(result[1].content).toBe('msg-5');
+      expect(result[5].content).toBe('msg-9');
+    } finally {
+      (config as any).GALILEO_MAX_LOCAL_CONTEXT_MESSAGES = original;
+    }
+  });
+
+  it('always preserves the system message as the first message', async () => {
+    const config = await import('./config.js');
+    const original = config.GALILEO_MAX_LOCAL_CONTEXT_MESSAGES;
+    (config as any).GALILEO_MAX_LOCAL_CONTEXT_MESSAGES = 3;
+
+    try {
+      const msgs = makeMessages(20);
+      const result = trimMessages(msgs as any);
+
+      expect(result[0].role).toBe('system');
+      expect(result[0].content).toBe('You are helpful.');
+      expect(result.length).toBe(4); // system + 3
+    } finally {
+      (config as any).GALILEO_MAX_LOCAL_CONTEXT_MESSAGES = original;
+    }
+  });
+
+  it('disables trimming when limit is 0', async () => {
+    const config = await import('./config.js');
+    const original = config.GALILEO_MAX_LOCAL_CONTEXT_MESSAGES;
+    (config as any).GALILEO_MAX_LOCAL_CONTEXT_MESSAGES = 0;
+
+    try {
+      const msgs = makeMessages(50);
+      const result = trimMessages(msgs as any);
+      expect(result).toEqual(msgs);
+      expect(result.length).toBe(51); // system + 50
+    } finally {
+      (config as any).GALILEO_MAX_LOCAL_CONTEXT_MESSAGES = original;
+    }
+  });
+
+  it('does not trim messages exactly at the limit', async () => {
+    const config = await import('./config.js');
+    const original = config.GALILEO_MAX_LOCAL_CONTEXT_MESSAGES;
+    (config as any).GALILEO_MAX_LOCAL_CONTEXT_MESSAGES = 10;
+
+    try {
+      const msgs = makeMessages(10); // system + exactly 10
+      const result = trimMessages(msgs as any);
+      expect(result).toEqual(msgs);
+      expect(result.length).toBe(11);
+    } finally {
+      (config as any).GALILEO_MAX_LOCAL_CONTEXT_MESSAGES = original;
+    }
   });
 });
