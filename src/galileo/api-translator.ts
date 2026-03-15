@@ -10,7 +10,12 @@
 
 import crypto from 'node:crypto';
 import { logger } from '../logger.js';
-import { GALILEO_MODEL_GENERAL, GALILEO_MAX_LOCAL_CONTEXT_MESSAGES } from './config.js';
+import {
+  GALILEO_MODEL_GENERAL,
+  GALILEO_MAX_LOCAL_CONTEXT_MESSAGES,
+  GALILEO_LOCAL_SYSTEM_PROMPT,
+  GALILEO_LOCAL_MAX_TOKENS,
+} from './config.js';
 
 // -- Types ----------------------------------------------------------------
 
@@ -77,21 +82,10 @@ export function translateRequest(anthropicBody: any): {
 } {
   const messages: OpenAIMessage[] = [];
 
-  // System prompt becomes a system message.
-  if (anthropicBody.system) {
-    const systemText =
-      typeof anthropicBody.system === 'string'
-        ? anthropicBody.system
-        : Array.isArray(anthropicBody.system)
-          ? (anthropicBody.system as AnthropicContentBlock[])
-              .filter((b): b is AnthropicTextBlock => b.type === 'text')
-              .map((b) => b.text)
-              .join('\n')
-          : '';
-    if (systemText) {
-      messages.push({ role: 'system', content: systemText });
-    }
-  }
+  // Replace Claude Code's massive system prompt with a concise local one.
+  // The SDK's system prompt (~5000+ tokens) confuses local models and wastes
+  // prefill time. The local prompt is configurable via GALILEO_LOCAL_SYSTEM_PROMPT.
+  messages.push({ role: 'system', content: GALILEO_LOCAL_SYSTEM_PROMPT });
 
   // Translate each Anthropic message, stripping tool interactions.
   // Local models run without tools — tool_use/tool_result blocks are
@@ -106,11 +100,23 @@ export function translateRequest(anthropicBody: any): {
   // The local model provides text-only responses; Claude handles tool use.
 
   // Trim older messages to keep context within the configured window.
-  const trimmedMessages = trimMessages(messages);
+  let trimmedMessages = trimMessages(messages);
+
+  // Ensure valid message ordering for Jinja prompt templates (e.g. Qwen 3.5
+  // GGUF) which require: system → user → assistant → user → ... → user.
+  // After trimming, the first non-system message may be an assistant message;
+  // drop leading assistant messages so the conversation starts with a user turn.
+  const startIdx = trimmedMessages[0]?.role === 'system' ? 1 : 0;
+  while (
+    startIdx < trimmedMessages.length &&
+    trimmedMessages[startIdx].role !== 'user'
+  ) {
+    trimmedMessages.splice(startIdx, 1);
+  }
 
   const body: Record<string, unknown> = {
     model: GALILEO_MODEL_GENERAL,
-    max_tokens: anthropicBody.max_tokens,
+    max_tokens: Math.min(anthropicBody.max_tokens ?? 4096, GALILEO_LOCAL_MAX_TOKENS),
     messages: trimmedMessages,
     stream: anthropicBody.stream ?? false,
   };

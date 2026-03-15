@@ -21,6 +21,8 @@ const GALILEO_KEYS = [
   'GALILEO_OBSIDIAN_VAULT_PATH',
   'GALILEO_MAX_LOCAL_ITERATIONS',
   'GALILEO_MAX_LOCAL_CONTEXT_MESSAGES',
+  'GALILEO_LOCAL_SYSTEM_PROMPT',
+  'GALILEO_LOCAL_MAX_TOKENS',
 ] as const;
 
 const envConfig = readEnvFile([...GALILEO_KEYS]);
@@ -79,6 +81,24 @@ export const GALILEO_MAX_LOCAL_ITERATIONS = parseInt(
 
 export const GALILEO_MAX_LOCAL_CONTEXT_MESSAGES = parseInt(
   env('GALILEO_MAX_LOCAL_CONTEXT_MESSAGES') || '40',
+  10,
+);
+
+const DEFAULT_LOCAL_SYSTEM_PROMPT = `You are Galileo, a capable AI assistant running on local hardware. You help with a wide range of tasks including web scraping, data collection, code analysis, file management, and research.
+
+Guidelines:
+- Be concise and direct. Skip unnecessary preamble.
+- When given a task, execute it step by step. Report results clearly.
+- If a task is ambiguous, make reasonable assumptions and proceed rather than asking for clarification.
+- For scraping or data tasks: extract structured data, handle errors gracefully, and save results.
+- For code tasks: read carefully before modifying, prefer minimal targeted changes.
+- If you encounter an error, try an alternative approach before giving up.`;
+
+export const GALILEO_LOCAL_SYSTEM_PROMPT =
+  env('GALILEO_LOCAL_SYSTEM_PROMPT') || DEFAULT_LOCAL_SYSTEM_PROMPT;
+
+export const GALILEO_LOCAL_MAX_TOKENS = parseInt(
+  env('GALILEO_LOCAL_MAX_TOKENS') || '16384',
   10,
 );
 
