@@ -40,12 +40,17 @@ import {
  * Stateless — the full conversation history is in every request.
  */
 function countToolResultBlocks(body: any): number {
+  // Walk backwards: each user message with tool_result blocks = one loop iteration.
+  // Stop when we hit a plain text user message (the human's original message).
+  const messages = body.messages ?? [];
   let count = 0;
-  for (const msg of body.messages ?? []) {
-    if (msg.role !== 'user' || typeof msg.content === 'string') continue;
-    for (const block of msg.content ?? []) {
-      if (block.type === 'tool_result') count++;
-    }
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    if (msg.role !== 'user') continue;
+    if (typeof msg.content === 'string') break;
+    const hasToolResult = (msg.content ?? []).some((b: any) => b.type === 'tool_result');
+    if (!hasToolResult) break;
+    count++;
   }
   return count;
 }
@@ -267,9 +272,13 @@ export function startCredentialProxy(
       req.on('end', () => {
         const body = Buffer.concat(chunks);
 
+
+        // Strip query parameters before URL matching (SDK appends ?beta=true etc.)
+        const urlWithoutQuery = (req.url || '').split('?')[0];
+
         // Parse per-group routing prefix from URL (e.g. /route/LOCAL_FIRST/v1/messages)
         const { mode: requestMode, strippedUrl } = parseRoutePrefix(
-          req.url || '',
+          urlWithoutQuery,
         );
         // Rewrite URL so upstream sees the clean path
         req.url = strippedUrl;
@@ -301,7 +310,8 @@ export function startCredentialProxy(
 
         // Galileo: route /v1/messages to local model if configured
         // Only match the exact messages endpoint, not sub-paths like /v1/messages/count_tokens
-        const isMessagesEndpoint = strippedUrl === '/v1/messages' || strippedUrl === '/v1/messages/';
+        const isMessagesEndpoint =
+          strippedUrl === '/v1/messages' || strippedUrl === '/v1/messages/';
         if (isMessagesEndpoint && shouldRouteLocal(requestMode)) {
           // Check iteration limit before routing to local model
           if (GALILEO_MAX_LOCAL_ITERATIONS > 0) {

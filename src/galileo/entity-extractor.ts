@@ -96,7 +96,10 @@ export async function extractAndStoreEntities(
     try {
       parsed = JSON.parse(jsonContent) as ExtractionResult;
     } catch {
-      logger.warn({ content: jsonContent.slice(0, 200) }, 'Failed to parse entity extraction JSON');
+      logger.warn(
+        { content: jsonContent.slice(0, 200) },
+        'Failed to parse entity extraction JSON',
+      );
       return;
     }
 
