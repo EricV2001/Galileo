@@ -31,8 +31,8 @@ interface ExtractionResult {
 // ---------------------------------------------------------------------------
 
 const SYSTEM_PROMPT =
-  'Extract entities and relationships from the following conversation. ' +
-  'Return valid JSON only, no markdown fences. Schema: { "entities": ' +
+  'Extract entities from the following conversation. ' +
+  'Return ONLY valid JSON, no markdown fences, no explanation. Schema: { "entities": ' +
   '[{ "name": "string", "type": "person|project|concept|tool|event|location|organization", ' +
   '"summary": "one sentence describing this entity in context" }] }';
 
@@ -59,10 +59,10 @@ export async function extractAndStoreEntities(
         model: GALILEO_MODEL_EXTRACTION,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: episodeBody },
+          { role: 'user', content: `/no_think\n${episodeBody}` },
         ],
         temperature: 0.1,
-        response_format: { type: 'json_object' },
+        max_tokens: 1024,
       }),
     });
 
@@ -85,11 +85,18 @@ export async function extractAndStoreEntities(
     }
 
     // Step 2: Parse the JSON response
+    // Strip <think>...</think> tags that some models emit before JSON
+    let jsonContent = content;
+    const thinkEnd = jsonContent.indexOf('</think>');
+    if (thinkEnd !== -1) {
+      jsonContent = jsonContent.slice(thinkEnd + '</think>'.length).trim();
+    }
+
     let parsed: ExtractionResult;
     try {
-      parsed = JSON.parse(content) as ExtractionResult;
+      parsed = JSON.parse(jsonContent) as ExtractionResult;
     } catch {
-      logger.warn({ content }, 'Failed to parse entity extraction JSON');
+      logger.warn({ content: jsonContent.slice(0, 200) }, 'Failed to parse entity extraction JSON');
       return;
     }
 
