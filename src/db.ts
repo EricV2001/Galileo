@@ -121,9 +121,7 @@ function createSchema(database: Database.Database): void {
 
   // Add routing_mode column if it doesn't exist (migration for existing DBs)
   try {
-    database.exec(
-      `ALTER TABLE registered_groups ADD COLUMN routing_mode TEXT`,
-    );
+    database.exec(`ALTER TABLE registered_groups ADD COLUMN routing_mode TEXT`);
   } catch {
     /* column already exists */
   }
@@ -586,7 +584,8 @@ export function getRegisteredGroup(
     requiresTrigger:
       row.requires_trigger === null ? undefined : row.requires_trigger === 1,
     isMain: row.is_main === 1 ? true : undefined,
-    routingMode: row.routing_mode as RegisteredGroup['routingMode'] ?? undefined,
+    routingMode:
+      (row.routing_mode as RegisteredGroup['routingMode']) ?? undefined,
   };
 }
 
@@ -642,7 +641,8 @@ export function getAllRegisteredGroups(): Record<string, RegisteredGroup> {
       requiresTrigger:
         row.requires_trigger === null ? undefined : row.requires_trigger === 1,
       isMain: row.is_main === 1 ? true : undefined,
-      routingMode: row.routing_mode as RegisteredGroup['routingMode'] ?? undefined,
+      routingMode:
+        (row.routing_mode as RegisteredGroup['routingMode']) ?? undefined,
     };
   }
   return result;

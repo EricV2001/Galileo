@@ -261,10 +261,7 @@ async function fulltextSearch(
   }
 }
 
-async function graphSearch(
-  query: string,
-  limit: number,
-): Promise<SearchHit[]> {
+async function graphSearch(query: string, limit: number): Promise<SearchHit[]> {
   const session = getSession();
   try {
     const result = await session.run(

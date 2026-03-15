@@ -46,7 +46,13 @@ describe('obsidian-writer', () => {
 
   describe('writeSynthesisNote', () => {
     it('writes YAML frontmatter with week, date_range, and source', () => {
-      writeSynthesisNote(vault, 'W11-2026', 'Mar 9–Mar 15', 'Insights here.', 12);
+      writeSynthesisNote(
+        vault,
+        'W11-2026',
+        'Mar 9–Mar 15',
+        'Insights here.',
+        12,
+      );
 
       const written = (writeFileSync as ReturnType<typeof vi.fn>).mock.calls[0];
       const content = written[1] as string;
@@ -84,7 +90,8 @@ describe('obsidian-writer', () => {
       ];
       writeEntityNote(vault, entity, relations);
 
-      const content = (writeFileSync as ReturnType<typeof vi.fn>).mock.calls[0][1] as string;
+      const content = (writeFileSync as ReturnType<typeof vi.fn>).mock
+        .calls[0][1] as string;
       expect(content).toContain('## Relationships');
       expect(content).toContain('[[Graphiti]]');
       expect(content).toContain('[[Cypher]]');
@@ -93,7 +100,8 @@ describe('obsidian-writer', () => {
     it('omits Relationships section when no relations', () => {
       writeEntityNote(vault, entity, []);
 
-      const content = (writeFileSync as ReturnType<typeof vi.fn>).mock.calls[0][1] as string;
+      const content = (writeFileSync as ReturnType<typeof vi.fn>).mock
+        .calls[0][1] as string;
       expect(content).not.toContain('## Relationships');
     });
   });
@@ -122,7 +130,8 @@ describe('obsidian-writer', () => {
       };
       writeEntityNote(vault, entity, []);
 
-      const writtenPath = (writeFileSync as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+      const writtenPath = (writeFileSync as ReturnType<typeof vi.fn>).mock
+        .calls[0][0] as string;
       expect(writtenPath).toContain('foo_bar_baz.md');
       expect(writtenPath).not.toContain('/bar:');
     });
@@ -138,8 +147,9 @@ describe('obsidian-writer', () => {
       };
       writeEntityNote(vault, entity, []);
 
-      const content = (writeFileSync as ReturnType<typeof vi.fn>).mock.calls[0][1] as string;
-      expect(content).toContain("name: \"He said 'hello'\"");
+      const content = (writeFileSync as ReturnType<typeof vi.fn>).mock
+        .calls[0][1] as string;
+      expect(content).toContain('name: "He said \'hello\'"');
       expect(content).not.toContain('""');
     });
   });

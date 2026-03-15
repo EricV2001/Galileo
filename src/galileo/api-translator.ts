@@ -180,7 +180,9 @@ function translateMessage(msg: AnthropicMessage): OpenAIMessage[] {
   return translateUserBlocks(blocks);
 }
 
-function translateAssistantBlocks(blocks: AnthropicContentBlock[]): OpenAIMessage[] {
+function translateAssistantBlocks(
+  blocks: AnthropicContentBlock[],
+): OpenAIMessage[] {
   const textParts: string[] = [];
   const toolCalls: OpenAIToolCall[] = [];
 

@@ -16,7 +16,10 @@ import { request as httpRequest, RequestOptions } from 'http';
 
 import { readEnvFile } from './env.js';
 import { logger } from './logger.js';
-import { GALILEO_LMSTUDIO_URL, GALILEO_MAX_LOCAL_ITERATIONS } from './galileo/config.js';
+import {
+  GALILEO_LMSTUDIO_URL,
+  GALILEO_MAX_LOCAL_ITERATIONS,
+} from './galileo/config.js';
 import {
   translateRequest,
   translateResponse,
@@ -148,10 +151,7 @@ export function startCredentialProxy(
     );
 
     upstream.on('error', (err) => {
-      logger.error(
-        { err, url: req.url },
-        'Credential proxy upstream error',
-      );
+      logger.error({ err, url: req.url }, 'Credential proxy upstream error');
       if (!res.headersSent) {
         res.writeHead(502);
         res.end('Bad Gateway');
@@ -268,7 +268,9 @@ export function startCredentialProxy(
         const body = Buffer.concat(chunks);
 
         // Parse per-group routing prefix from URL (e.g. /route/LOCAL_FIRST/v1/messages)
-        const { mode: requestMode, strippedUrl } = parseRoutePrefix(req.url || '');
+        const { mode: requestMode, strippedUrl } = parseRoutePrefix(
+          req.url || '',
+        );
         // Rewrite URL so upstream sees the clean path
         req.url = strippedUrl;
 
@@ -296,7 +298,9 @@ export function startCredentialProxy(
                   forwardToAnthropic(body, req, res);
                 } else {
                   res.writeHead(200, { 'Content-Type': 'application/json' });
-                  res.end(JSON.stringify(buildIterationLimitResponse(iterations)));
+                  res.end(
+                    JSON.stringify(buildIterationLimitResponse(iterations)),
+                  );
                 }
                 return;
               }

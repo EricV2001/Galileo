@@ -31,7 +31,11 @@ function env(key: string): string | undefined {
 // -- Exported constants ---------------------------------------------------
 
 const rawMode = env('GALILEO_ROUTING_MODE') || 'CLAUDE_ONLY';
-const validModes: GalileoRoutingMode[] = ['LOCAL_FIRST', 'LOCAL_ONLY', 'CLAUDE_ONLY'];
+const validModes: GalileoRoutingMode[] = [
+  'LOCAL_FIRST',
+  'LOCAL_ONLY',
+  'CLAUDE_ONLY',
+];
 export const GALILEO_ROUTING_MODE: GalileoRoutingMode = validModes.includes(
   rawMode as GalileoRoutingMode,
 )

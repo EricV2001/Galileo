@@ -39,7 +39,9 @@ describe('config defaults (no env vars set)', () => {
   });
 
   it('GALILEO_MODEL_EMBEDDING defaults to text-embedding-nomic-embed-text-v1.5@f16', () => {
-    expect(config.GALILEO_MODEL_EMBEDDING).toBe('text-embedding-nomic-embed-text-v1.5@f16');
+    expect(config.GALILEO_MODEL_EMBEDDING).toBe(
+      'text-embedding-nomic-embed-text-v1.5@f16',
+    );
   });
 
   it('GALILEO_MEMORY_ENABLED defaults to false', () => {

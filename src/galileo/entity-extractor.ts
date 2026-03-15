@@ -101,7 +101,10 @@ export async function extractAndStoreEntities(
     }
 
     if (!Array.isArray(parsed.entities)) {
-      logger.warn({ parsed }, 'Entity extraction result missing entities array');
+      logger.warn(
+        { parsed },
+        'Entity extraction result missing entities array',
+      );
       return;
     }
 

@@ -23,7 +23,7 @@ export function decayScore(
   }
   const now = Date.now();
   const ageDays = Math.max((now - createdAt.getTime()) / 86_400_000, 0.0);
-  return base * Math.exp(-Math.LN2 * ageDays / halfLifeDays);
+  return base * Math.exp((-Math.LN2 * ageDays) / halfLifeDays);
 }
 
 /**

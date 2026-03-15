@@ -1,6 +1,10 @@
 import { GALILEO_ROUTING_MODE, GalileoRoutingMode } from './config.js';
 
-const VALID_MODES: GalileoRoutingMode[] = ['LOCAL_FIRST', 'LOCAL_ONLY', 'CLAUDE_ONLY'];
+const VALID_MODES: GalileoRoutingMode[] = [
+  'LOCAL_FIRST',
+  'LOCAL_ONLY',
+  'CLAUDE_ONLY',
+];
 
 // -- Public API -----------------------------------------------------------
 

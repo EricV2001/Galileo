@@ -119,7 +119,10 @@ describe('rerankByDecay', () => {
   it('handles null created_at (no decay applied)', () => {
     const results = [
       { id: 'no-date', created_at: null },
-      { id: 'fresh', created_at: new Date('2026-03-11T00:00:00Z').toISOString() },
+      {
+        id: 'fresh',
+        created_at: new Date('2026-03-11T00:00:00Z').toISOString(),
+      },
     ];
 
     const reranked = rerankByDecay(results, 30);

@@ -184,7 +184,12 @@ export async function consolidateDaily(hours: number = 25): Promise<void> {
 
       // Write Obsidian note if configured
       if (GALILEO_OBSIDIAN_VAULT_PATH) {
-        writeDigestNote(GALILEO_OBSIDIAN_VAULT_PATH, today, summary, result.records.length);
+        writeDigestNote(
+          GALILEO_OBSIDIAN_VAULT_PATH,
+          today,
+          summary,
+          result.records.length,
+        );
         logger.info('consolidateDaily: digest note written');
       }
     } finally {
@@ -263,18 +268,16 @@ export async function synthesizeWeekly(days: number = 7): Promise<void> {
         'synthesizeWeekly: generating synthesis',
       );
 
-      const synthesis = await callLmStudio(
-        SYNTHESIS_PROMPT,
-        userContent,
-        2048,
-      );
+      const synthesis = await callLmStudio(SYNTHESIS_PROMPT, userContent, 2048);
 
       // Write Obsidian note if configured
       if (GALILEO_OBSIDIAN_VAULT_PATH) {
         const now = new Date();
         const week = isoWeek(now);
         const endDate = now.toISOString().slice(0, 10);
-        const startDate = new Date(now.getTime() - days * 86400000).toISOString().slice(0, 10);
+        const startDate = new Date(now.getTime() - days * 86400000)
+          .toISOString()
+          .slice(0, 10);
         writeSynthesisNote(
           GALILEO_OBSIDIAN_VAULT_PATH,
           week,
@@ -354,7 +357,8 @@ export async function syncEntities(): Promise<void> {
         const summary = (record.get('summary') as string) ?? '';
         const relations = adjacency.get(name) ?? [];
 
-        const createdAt = (record.get('created_at')?.toString() as string) ?? '';
+        const createdAt =
+          (record.get('created_at')?.toString() as string) ?? '';
         writeEntityNote(
           GALILEO_OBSIDIAN_VAULT_PATH,
           { name, type, summary, createdAt },
