@@ -61,6 +61,7 @@ import {
   closeGalileoMemory,
   recallMemory,
   storeMemory,
+  drainExtractionQueue,
 } from './galileo/memory-layer.js';
 
 // Re-export for backwards compatibility during refactor
@@ -264,6 +265,14 @@ async function processGroupMessages(chatJid: string): Promise<boolean> {
 
   await channel.setTyping?.(chatJid, false);
   if (idleTimer) clearTimeout(idleTimer);
+
+  // Drain queued entity extractions now that the container (and 27B model)
+  // has finished — the 9B extraction model can use the GPU uncontested.
+  if (isGalileoMemoryEnabled()) {
+    drainExtractionQueue().catch((err) =>
+      logger.warn({ err }, 'Entity extraction drain failed'),
+    );
+  }
 
   if (output === 'error' || hadError) {
     // If we already sent output to the user, don't roll back the cursor —

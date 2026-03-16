@@ -81,12 +81,21 @@ export async function recallMemory(query: string): Promise<string> {
 // Store
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Deferred entity extraction queue
+// ---------------------------------------------------------------------------
+
+interface PendingExtraction {
+  body: string;
+  episodeId: string;
+}
+
+const extractionQueue: PendingExtraction[] = [];
+
 /**
- * Persist a conversation turn (prompt + response) as an episode, then
- * kick off async entity extraction.
- *
- * The episode write is awaited so we get the episodeId.  Entity extraction
- * runs fire-and-forget — it will not block the caller.
+ * Persist a conversation turn (prompt + response) as an episode.
+ * Entity extraction is queued — call `drainExtractionQueue()` after
+ * the agent container exits so the GPU is free for the 9B model.
  */
 export async function storeMemory(
   prompt: string,
@@ -103,8 +112,30 @@ export async function storeMemory(
     return;
   }
 
-  // Fire-and-forget: entity extraction runs in the background.
-  extractAndStoreEntities(body, episodeId).catch((err) =>
-    logger.warn({ err, episodeId }, 'Background entity extraction failed'),
+  // Queue extraction — will run after the container releases the GPU.
+  extractionQueue.push({ body, episodeId });
+  logger.debug({ episodeId }, 'Entity extraction queued');
+}
+
+/**
+ * Process all queued entity extractions sequentially.
+ * Call this after the agent container has exited so the 27B model
+ * is no longer holding the GPU and the 9B extraction model can run.
+ */
+export async function drainExtractionQueue(): Promise<void> {
+  if (extractionQueue.length === 0) return;
+
+  const pending = extractionQueue.splice(0);
+  logger.info(
+    { count: pending.length },
+    'Draining entity extraction queue',
   );
+
+  for (const { body, episodeId } of pending) {
+    try {
+      await extractAndStoreEntities(body, episodeId);
+    } catch (err) {
+      logger.warn({ err, episodeId }, 'Deferred entity extraction failed');
+    }
+  }
 }
