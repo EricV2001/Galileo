@@ -73,6 +73,32 @@ systemctl --user restart galileo
 
 **WhatsApp not connecting after upgrade:** WhatsApp is now a separate channel fork, not bundled in core. Run `/add-whatsapp` (or `git remote add whatsapp https://github.com/qwibitai/nanoclaw-whatsapp.git && git fetch whatsapp main && (git merge whatsapp/main || { git checkout --theirs package-lock.json && git add package-lock.json && git merge --continue; }) && npm run build`) to install it. Existing auth credentials and groups are preserved.
 
+## Learning Loop
+
+After completing a debugging session or significant changes, close the loop:
+
+1. **Save learnings to memory** — Root causes, gotchas, and architectural discoveries go in `~/.claude/projects/-Users-ericverbrugge-Galileo/memory/`. Update existing files before creating new ones. Check `MEMORY.md` index first.
+2. **Sync both repos** — Local and Mac Mini must stay in sync. Mac Mini can't push to GitHub. Workflow: `git fetch mini main && git merge mini/main && git push` from local, then `git pull` on Mac Mini.
+3. **Rebuild and verify on Mac Mini** — `npm run build` (needs `PATH=/opt/homebrew/bin:$PATH`), restart with `launchctl kickstart`, check `logs/galileo.log` (not `nanoclaw.log`).
+4. **Check known issues** — Review memory files for open bugs before starting new work. Current open issue: entity extraction reliability under GPU contention (deferred queue added 2026-03-16, needs validation).
+
+## Quick Smoke Test
+
+Send a test message to the bot via SQLite injection on the Mac Mini to verify end-to-end message processing. Useful after deploying changes to confirm the bot is responsive.
+
+```bash
+ssh EricClaw@192.168.68.102 "sqlite3 ~/Galileo/Galileo/store/messages.db \
+  \"INSERT OR REPLACE INTO messages (id, chat_jid, sender, sender_name, content, timestamp, is_from_me, is_bot_message) \
+  VALUES ('test-\$(date +%s)', 'tg:-5223158323', 'TestHarness', 'Test Harness', '@Galileo Hi, quick health check — respond with OK', '\$(date -u +%Y-%m-%dT%H:%M:%S.000Z)', 0, 0);\""
+```
+
+Then watch for the response:
+```bash
+ssh EricClaw@192.168.68.102 'tail -f ~/Galileo/Galileo/logs/galileo.log' | grep -E 'Agent output|error|warn'
+```
+
+For the full integration test suite, see `tests/integration/test-harness.ts`.
+
 ## Container Build Cache
 
 The container buildkit caches the build context aggressively. `--no-cache` alone does NOT invalidate COPY steps — the builder's volume retains stale files. To force a truly clean rebuild, prune the builder then re-run `./container/build.sh`.
