@@ -180,6 +180,10 @@ export function startCredentialProxy(
     res: ServerResponse,
   ): Promise<void> {
     const anthropicBody = JSON.parse(body.toString());
+    // Force non-streaming for local models — streaming SSE with LM Studio
+    // is unreliable (intermittent timeouts ~60s) and adds no value for
+    // batch/overnight workloads where latency isn't critical.
+    anthropicBody.stream = false;
     const { body: openaiBody } = translateRequest(anthropicBody);
     const targetUrl = `${GALILEO_LMSTUDIO_URL}/chat/completions`;
 
@@ -188,7 +192,7 @@ export function startCredentialProxy(
         model: openaiBody.model,
         messageCount: openaiBody.messages?.length,
         toolCount: openaiBody.tools?.length ?? 0,
-        stream: !!anthropicBody.stream,
+        stream: false,
       },
       'Local route: sending to LM Studio',
     );

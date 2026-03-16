@@ -8,6 +8,7 @@
  * must never throw.
  */
 
+import { ASSISTANT_NAME } from '../config.js';
 import { GALILEO_LMSTUDIO_URL, GALILEO_MODEL_EXTRACTION } from './config.js';
 import { storeEntity } from './graphiti-client.js';
 import { logger } from '../logger.js';
@@ -30,11 +31,15 @@ interface ExtractionResult {
 // Extraction prompt
 // ---------------------------------------------------------------------------
 
-const SYSTEM_PROMPT =
-  'Extract entities from the following conversation. ' +
-  'Return ONLY valid JSON, no markdown fences, no explanation. Schema: { "entities": ' +
-  '[{ "name": "string", "type": "person|project|concept|tool|event|location|organization", ' +
-  '"summary": "one sentence describing this entity in context" }] }';
+function buildExtractionPrompt(): string {
+  return (
+    `Extract entities from the following conversation between a user and an AI assistant named "${ASSISTANT_NAME}". ` +
+    `Do NOT include "${ASSISTANT_NAME}" itself as an entity. ` +
+    'Return ONLY valid JSON, no markdown fences, no explanation, no reasoning. Schema: { "entities": ' +
+    '[{ "name": "string", "type": "person|project|concept|tool|event|location|organization", ' +
+    '"summary": "one sentence describing this entity in context" }] }'
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -58,11 +63,11 @@ export async function extractAndStoreEntities(
       body: JSON.stringify({
         model: GALILEO_MODEL_EXTRACTION,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: buildExtractionPrompt() },
           { role: 'user', content: `/no_think\n${episodeBody}` },
         ],
         temperature: 0.1,
-        max_tokens: 1024,
+        max_tokens: 2048,
       }),
     });
 

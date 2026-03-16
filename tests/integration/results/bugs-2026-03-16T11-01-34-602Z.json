@@ -1,0 +1,43 @@
+{
+  "suite": "bugs",
+  "timestamp": "2026-03-16T11:01:34.602Z",
+  "results": [
+    {
+      "name": "Phantom \"Andy\" entity in extraction",
+      "category": "bugs",
+      "status": "PASS",
+      "durationMs": 9306,
+      "matchedPatterns": [
+        "response-sent"
+      ],
+      "failedPatterns": [],
+      "unwantedMatches": [],
+      "capturedOutput": "[12:00:05.712] INFO (81240): New messages\n    count: 1\n[12:00:10.287] INFO (81240): Agent output: That's nice! Hope Sarah finds everything she needs for dinner. Is there something I can help you with?\n    group: \"Galileo Complex\"\n[12:00:10.333] INFO (81240): Telegram message sent\n    jid: \"tg:-5223158323\"\n    length: 102\n"
+    },
+    {
+      "name": "Entity extraction JSON parse failure",
+      "category": "bugs",
+      "status": "PASS",
+      "durationMs": 7337,
+      "matchedPatterns": [
+        "response-sent"
+      ],
+      "failedPatterns": [],
+      "unwantedMatches": [],
+      "capturedOutput": "[12:00:19.743] INFO (81240): New messages\n    count: 1\n[12:00:22.930] INFO (81240): Agent output: Sounds like a nice meetup! Amsterdam has great coffee shops. Is there something I can help you with?\n    group: \"Galileo Complex\"\n[12:00:22.989] INFO (81240): Telegram message sent\n    jid: \"tg:-5223158323\"\n    length: 100\n"
+    },
+    {
+      "name": "Streaming timeout measurement (LOCAL_FIRST)",
+      "category": "bugs",
+      "status": "PASS",
+      "durationMs": 62114,
+      "matchedPatterns": [
+        "local-route-used",
+        "response-sent"
+      ],
+      "failedPatterns": [],
+      "unwantedMatches": [],
+      "capturedOutput": "[12:00:33.762] INFO (81240): New messages\n    count: 1\n[12:00:41.773] WARN (81240): Failed to parse entity extraction JSON\n    content: \"test-ack-ok<|im_end|>\\n<|im_start|>assistant\\n<think>\\nThe user is asking me to reply with \\\"test-ack-ok\\\" as a test message. This appears to be from the Test Harness, not Eric. I should follow the instruc\"\n[12:01:29.200] INFO (81240): Agent output: </think>\n\nI'll ignore this message as it doesn't contain a valid trigger. Is there something I can help you with?\n    group: \"Galileo Local\"\n[12:01:29.250] INFO (81240): [galileo] Context window: trimmed 69 older messages, keeping 20 of 89\n[12:01:29.251] INFO (81240): Local route: sending to LM Studio\n    model: \"unsloth/qwen3.5-27b\"\n    messageCount: 20\n    toolCount: 0\n    stream: true\n[12:01:29.321] INFO (81240): Telegram message sent\n    jid: \"tg:-5147245950\"\n    length: 113\n"
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "suite": "functional",
+  "timestamp": "2026-03-16T10:57:39.511Z",
+  "results": [
+    {
+      "name": "Simple greeting gets a response",
+      "category": "functional",
+      "status": "PASS",
+      "durationMs": 11716,
+      "matchedPatterns": [
+        "message-received",
+        "response-sent"
+      ],
+      "failedPatterns": [],
+      "unwantedMatches": [],
+      "capturedOutput": "[11:56:43.287] INFO (81240): New messages\n    count: 1\n[11:56:43.470] INFO (81240): Processing messages\n    group: \"Galileo Complex\"\n    messageCount: 1\n[11:56:43.580] INFO (81240): Spawning container agent\n    group: \"Galileo Complex\"\n    containerName: \"nanoclaw-telegram-galileo-complex-1773658603580\"\n    mountCount: 5\n    isMain: false\n[11:56:48.789] INFO (81240): Agent output: test-ack-ok\n    group: \"Galileo Complex\"\n[11:56:48.954] INFO (81240): Telegram message sent\n    jid: \"tg:-5223158323\"\n    length: 11\n"
+    },
+    {
+      "name": "Empty message body handling",
+      "category": "functional",
+      "status": "PASS",
+      "durationMs": 4850,
+      "matchedPatterns": [
+        "message-received"
+      ],
+      "failedPatterns": [],
+      "unwantedMatches": [],
+      "capturedOutput": "[11:56:59.316] INFO (81240): New messages\n    count: 1\n[11:57:01.771] INFO (81240): Agent output: Hello! How can I help you?\n    group: \"Galileo Complex\"\n[11:57:01.815] INFO (81240): Telegram message sent\n    jid: \"tg:-5223158323\"\n    length: 26\n"
+    },
+    {
+      "name": "Unicode and emoji in messages",
+      "category": "functional",
+      "status": "PASS",
+      "durationMs": 9497,
+      "matchedPatterns": [
+        "message-received",
+        "response-sent"
+      ],
+      "failedPatterns": [],
+      "unwantedMatches": [],
+      "capturedOutput": "[11:57:09.259] WARN (81240): Failed to parse entity extraction JSON\n    content: \"{\\n  \\\"entities\\\": [\\n    {\\n      \\\"name\\\": \\\"Eric\\\",\\n      \\\"type\\\": \\\"person\\\",\\n      \\\"summary\\\": \\\"The user who is having conversations with the assistant, sending greeting messages throughout the conversation\\\"\\n\"\n[11:57:09.339] INFO (81240): New messages\n    count: 1\n[11:57:14.570] INFO (81240): Agent output: unicode-ack\n    group: \"Galileo Complex\"\n[11:57:14.731] INFO (81240): Telegram message sent\n    jid: \"tg:-5223158323\"\n    length: 11\n"
+    },
+    {
+      "name": "Whitespace-only after trigger",
+      "category": "functional",
+      "status": "PASS",
+      "durationMs": 4807,
+      "matchedPatterns": [
+        "message-received"
+      ],
+      "failedPatterns": [],
+      "unwantedMatches": [],
+      "capturedOutput": "[11:57:25.428] INFO (81240): New messages\n    count: 1\n[11:57:28.310] INFO (81240): Agent output: Hello! It looks like your message was empty. How can I help you?\n    group: \"Galileo Complex\"\n[11:57:28.353] INFO (81240): Telegram message sent\n    jid: \"tg:-5223158323\"\n    length: 64\n"
+    },
+    {
+      "name": "Message without trigger is ignored (non-main group)",
+      "category": "functional",
+      "status": "PASS",
+      "durationMs": 4762,
+      "matchedPatterns": [
+        "message-seen-by-loop"
+      ],
+      "failedPatterns": [],
+      "unwantedMatches": [],
+      "capturedOutput": "[11:57:35.451] INFO (81240): New messages\n    count: 1\n[11:57:35.778] INFO (81240): [galileo] Context window: trimmed 67 older messages, keeping 20 of 87\n[11:57:35.779] INFO (81240): Local route: sending to LM Studio\n    model: \"unsloth/qwen3.5-27b\"\n    messageCount: 20\n    toolCount: 0\n    stream: true\n"
+    }
+  ]
+}

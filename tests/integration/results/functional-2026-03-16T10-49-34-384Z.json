@@ -1,0 +1,69 @@
+{
+  "suite": "functional",
+  "timestamp": "2026-03-16T10:49:34.385Z",
+  "results": [
+    {
+      "name": "Simple greeting gets a response",
+      "category": "functional",
+      "status": "FAIL",
+      "durationMs": 120640,
+      "matchedPatterns": [],
+      "failedPatterns": [
+        "message-received",
+        "response-sent"
+      ],
+      "unwantedMatches": [],
+      "capturedOutput": "[11:43:47.094] INFO (81240): Telegram message sent\n    jid: \"tg:-5147245950\"\n    length: 72\n[11:43:47.094] INFO (81240): IPC message sent\n    chatJid: \"tg:-5147245950\"\n    sourceGroup: \"telegram_galileo_local\"\n"
+    },
+    {
+      "name": "Empty message body handling",
+      "category": "functional",
+      "status": "FAIL",
+      "durationMs": 32274,
+      "matchedPatterns": [],
+      "failedPatterns": [
+        "message-received"
+      ],
+      "unwantedMatches": [],
+      "capturedOutput": "[11:45:53.609] INFO (81240): Telegram message sent\n    jid: \"tg:-5147245950\"\n    length: 9\n[11:45:53.609] INFO (81240): IPC message sent\n    chatJid: \"tg:-5147245950\"\n    sourceGroup: \"telegram_galileo_local\"\n"
+    },
+    {
+      "name": "Unicode and emoji in messages",
+      "category": "functional",
+      "status": "FAIL",
+      "durationMs": 121372,
+      "matchedPatterns": [
+        "response-sent"
+      ],
+      "failedPatterns": [
+        "message-received"
+      ],
+      "unwantedMatches": [],
+      "capturedOutput": "[11:46:31.800] INFO (81240): Telegram message sent\n    jid: \"tg:-5147245950\"\n    length: 66\n[11:46:31.800] INFO (81240): IPC message sent\n    chatJid: \"tg:-5147245950\"\n    sourceGroup: \"telegram_galileo_local\"\n"
+    },
+    {
+      "name": "Whitespace-only after trigger",
+      "category": "functional",
+      "status": "FAIL",
+      "durationMs": 30318,
+      "matchedPatterns": [],
+      "failedPatterns": [
+        "message-received"
+      ],
+      "unwantedMatches": [],
+      "capturedOutput": "[11:48:38.342] INFO (81240): Telegram message sent\n    jid: \"tg:-5147245950\"\n    length: 15\n[11:48:38.342] INFO (81240): IPC message sent\n    chatJid: \"tg:-5147245950\"\n    sourceGroup: \"telegram_galileo_local\"\n"
+    },
+    {
+      "name": "Message without trigger is ignored (non-main group)",
+      "category": "functional",
+      "status": "FAIL",
+      "durationMs": 20597,
+      "matchedPatterns": [],
+      "failedPatterns": [
+        "message-stored"
+      ],
+      "unwantedMatches": [],
+      "capturedOutput": "[11:49:14.599] INFO (81240): Telegram message sent\n    jid: \"tg:-5147245950\"\n    length: 41\n[11:49:14.599] INFO (81240): IPC message sent\n    chatJid: \"tg:-5147245950\"\n    sourceGroup: \"telegram_galileo_local\"\n"
+    }
+  ]
+}
