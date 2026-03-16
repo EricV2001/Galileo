@@ -42,6 +42,64 @@ function buildExtractionPrompt(): string {
 }
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Cap input length so the 9B model isn't overwhelmed by full context windows. */
+const MAX_INPUT_CHARS = 2000;
+
+/**
+ * Attempt to repair truncated JSON from the extraction model.
+ * The model often produces valid JSON that gets cut off mid-stream.
+ * We try to close any open strings, arrays, and objects.
+ */
+function repairTruncatedJson(raw: string): string {
+  // Already valid?
+  try {
+    JSON.parse(raw);
+    return raw;
+  } catch {
+    // Continue with repair
+  }
+
+  let fixed = raw;
+
+  // Close an open string value (odd number of unescaped quotes)
+  const quotes = (fixed.match(/(?<!\\)"/g) || []).length;
+  if (quotes % 2 !== 0) {
+    fixed += '"';
+  }
+
+  // Close open arrays and objects by counting unmatched brackets
+  let openBraces = 0;
+  let openBrackets = 0;
+  let inString = false;
+  for (let i = 0; i < fixed.length; i++) {
+    const ch = fixed[i];
+    if (ch === '"' && (i === 0 || fixed[i - 1] !== '\\')) {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (ch === '{') openBraces++;
+    else if (ch === '}') openBraces--;
+    else if (ch === '[') openBrackets++;
+    else if (ch === ']') openBrackets--;
+  }
+
+  // Remove trailing comma before closing
+  fixed = fixed.replace(/,\s*$/, '');
+
+  // If we're mid-object (after a key's colon with no value), drop the dangling key
+  fixed = fixed.replace(/,?\s*"[^"]*"\s*:\s*$/, '');
+
+  for (let i = 0; i < openBrackets; i++) fixed += ']';
+  for (let i = 0; i < openBraces; i++) fixed += '}';
+
+  return fixed;
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -56,6 +114,14 @@ export async function extractAndStoreEntities(
   episodeId: string,
 ): Promise<void> {
   try {
+    // Truncate input — entity extraction only needs the gist, not the full
+    // context window. Large inputs cause the 9B model to generate slowly
+    // and produce truncated JSON.
+    const truncatedBody =
+      episodeBody.length > MAX_INPUT_CHARS
+        ? episodeBody.slice(-MAX_INPUT_CHARS)
+        : episodeBody;
+
     // Step 1: Call LM Studio for extraction
     const response = await fetch(`${GALILEO_LMSTUDIO_URL}/chat/completions`, {
       method: 'POST',
@@ -64,11 +130,12 @@ export async function extractAndStoreEntities(
         model: GALILEO_MODEL_EXTRACTION,
         messages: [
           { role: 'system', content: buildExtractionPrompt() },
-          { role: 'user', content: `/no_think\n${episodeBody}` },
+          { role: 'user', content: `/no_think\n${truncatedBody}` },
         ],
         temperature: 0.1,
         max_tokens: 2048,
       }),
+      signal: AbortSignal.timeout(120_000),
     });
 
     if (!response.ok) {
@@ -97,15 +164,25 @@ export async function extractAndStoreEntities(
       jsonContent = jsonContent.slice(thinkEnd + '</think>'.length).trim();
     }
 
+    // Strip markdown code fences if present
+    jsonContent = jsonContent.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+
     let parsed: ExtractionResult;
     try {
       parsed = JSON.parse(jsonContent) as ExtractionResult;
     } catch {
-      logger.warn(
-        { content: jsonContent.slice(0, 200) },
-        'Failed to parse entity extraction JSON',
-      );
-      return;
+      // Attempt to repair truncated JSON before giving up
+      const repaired = repairTruncatedJson(jsonContent);
+      try {
+        parsed = JSON.parse(repaired) as ExtractionResult;
+        logger.info('Entity extraction JSON repaired from truncated response');
+      } catch {
+        logger.warn(
+          { content: jsonContent.slice(0, 200) },
+          'Failed to parse entity extraction JSON',
+        );
+        return;
+      }
     }
 
     if (!Array.isArray(parsed.entities)) {
@@ -125,7 +202,7 @@ export async function extractAndStoreEntities(
       await storeEntity(entity.name, entity.type, entity.summary, episodeId);
     }
 
-    logger.debug(
+    logger.info(
       { episodeId, count: parsed.entities.length },
       'Entity extraction complete',
     );
