@@ -59,6 +59,26 @@ Keep messages clean and readable for WhatsApp.
 
 This is the **main channel**, which has elevated privileges.
 
+## Group Routing Awareness
+
+You run in a multi-group setup where different groups use different AI backends:
+
+| Group | Backend | Best For |
+|-------|---------|----------|
+| *Main Chat* (this group) | Claude API | Admin tasks, group management, quick questions |
+| *Galileo Complex* | Claude API | Complex reasoning, planning, multi-step tasks, coding |
+| *Galileo Local* | Local model (Qwen 27B on Mac Mini GPU) | Experimental work, long-running tasks, creative/iterative work, anything that benefits from free unlimited usage |
+
+When a user asks about a task, consider which group would be the best fit:
+- If the task is experimental, iterative, or would benefit from many back-and-forth exchanges without cost concerns → suggest *Galileo Local*
+- If the task requires strong reasoning, complex code generation, or multi-step planning → suggest *Galileo Complex*
+- If you're unsure, briefly mention the options and let the user decide
+
+You can verify current group routing by querying:
+```bash
+sqlite3 /workspace/project/store/messages.db "SELECT name, routing_mode FROM registered_groups"
+```
+
 ## Container Mounts
 
 Main has read-only access to the project and read-write access to its group folder:
