@@ -244,8 +244,9 @@ async function processGroupMessages(chatJid: string): Promise<boolean> {
           outputSentToUser = true;
           // Galileo: store conversation in knowledge graph
           if (isGalileoMemoryEnabled()) {
-            storeMemory(enrichedPrompt, text, group.folder).catch((err) =>
-              logger.warn({ err }, 'Galileo memory store failed'),
+            const rawMsg = missedMessages.map((m) => m.content).join('\n');
+            storeMemory(enrichedPrompt, text, group.folder, rawMsg).catch(
+              (err) => logger.warn({ err }, 'Galileo memory store failed'),
             );
           }
         }

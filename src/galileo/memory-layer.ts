@@ -96,11 +96,19 @@ const extractionQueue: PendingExtraction[] = [];
  * Persist a conversation turn (prompt + response) as an episode.
  * Entity extraction is queued — call `drainExtractionQueue()` after
  * the agent container exits so the GPU is free for the 9B model.
+ *
+ * @param prompt      The enriched prompt (full context) — stored as the episode.
+ * @param response    The assistant's response text.
+ * @param groupFolder Group folder name for episode namespacing.
+ * @param rawMessage  Optional raw user message (without context enrichment).
+ *                    Used for entity extraction to avoid feeding the 9B model
+ *                    the full 20-message context window.
  */
 export async function storeMemory(
   prompt: string,
   response: string,
   groupFolder: string,
+  rawMessage?: string,
 ): Promise<void> {
   const body = `User: ${prompt}\n\nAssistant: ${response}`;
 
@@ -112,8 +120,11 @@ export async function storeMemory(
     return;
   }
 
-  // Queue extraction — will run after the container releases the GPU.
-  extractionQueue.push({ body, episodeId });
+  // Queue extraction with just the current turn (not full context).
+  const extractionBody = rawMessage
+    ? `User: ${rawMessage}\n\nAssistant: ${response}`
+    : body;
+  extractionQueue.push({ body: extractionBody, episodeId });
   logger.debug({ episodeId }, 'Entity extraction queued');
 }
 
